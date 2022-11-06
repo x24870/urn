@@ -1,0 +1,16 @@
+[package]
+name = 'urn'
+version = '0.0.1'
+
+[addresses]
+owner = "_"
+
+[dependencies.AptosFramework]
+git = 'https://github.com/aptos-labs/aptos-core.git'
+rev = 'testnet'
+subdir = 'aptos-move/framework/aptos-framework'
+
+[dependencies.AptosToken]
+git = 'https://github.com/aptos-labs/aptos-core.git'
+rev = 'testnet'
+subdir = 'aptos-move/framework/aptos-token'

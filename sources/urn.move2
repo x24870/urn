@@ -1,0 +1,189 @@
+module owner::urn {
+    use aptos_framework::account;
+    use aptos_std::table;
+    use std::signer;
+    use std::string::{Self, String};
+    use std::vector;
+    use aptos_token::token;
+    use aptos_framework::event::{Self, EventHandle};
+
+    const MAX_U64: u64 = 18446744073709551615;
+
+    struct MintEvent has store, drop {
+        minter: address,
+        count: u64,
+        referral_code: String,
+    }
+
+    struct CryptoMinter has store, key {
+        counter: u64,
+        mints: table::Table<address, u64>,
+        minting_enabled: bool,
+        signer_cap: account::SignerCapability,
+        mint_event: EventHandle<MintEvent>,
+    }
+
+    const ENOT_AUTHORIZED: u64 = 1;
+    const EHAS_ALREADY_CLAIMED_MINT: u64 = 2;
+    const EMINTING_NOT_ENABLED: u64 = 3;
+
+    const COLLECTION_NAME: vector<u8> = b"URN";
+    const TOKEN_NAME: vector<u8> = b"SHOVEL";
+
+    const TOKEN_URL: vector<u8> = b"https://shovel.jpg";
+
+    fun init_module(sender: &signer) {
+        // Don't run setup more than once
+        if (exists<CryptoMinter>(signer::address_of(sender))) {
+            return
+        };
+
+        // Create the resource account, so we can get ourselves as signer later
+        let (resource, signer_cap) = account::create_resource_account(sender, vector::empty());
+
+        // Set up NFT collection
+        let collection_name = string::utf8(COLLECTION_NAME);
+        let description = string::utf8(b"Dig your grandma and put to the urn");
+        let collection_uri = string::utf8(b"https://urn.jpg");
+        let maximum_supply = MAX_U64;
+        let mutate_setting = vector<bool>[ false, true, false ]; // desc, max, uri
+        token::create_collection(&resource, collection_name, description, collection_uri, maximum_supply, mutate_setting);
+
+        move_to(sender, CryptoMinter {
+            counter: 1,
+            mints: table::new(),
+            minting_enabled: true,
+            signer_cap,
+            mint_event: account::new_event_handle<MintEvent>(&resource),
+        });
+    }
+
+    fun get_resource_signer(): signer acquires CryptoMinter {
+        account::create_signer_with_capability(&borrow_global<CryptoMinter>(@myself).signer_cap)
+    }
+
+    public entry fun set_minting_enabled(sign: signer, minting_enabled: bool) acquires CryptoMinter {
+        let sender = signer::address_of(&sign);
+        assert!(sender == @myself, ENOT_AUTHORIZED);
+        let cm = borrow_global_mut<CryptoMinter>(sender);
+        cm.minting_enabled = minting_enabled;
+    }
+
+    const HEX_SYMBOLS: vector<u8> = b"0123456789abcdef";
+
+    public entry fun claim_mint(sign: &signer, referral_code: String) acquires CryptoMinter {
+        let cm = borrow_global<CryptoMinter>(@myself);
+        assert!(cm.minting_enabled, EMINTING_NOT_ENABLED);
+        set_minted(sign, cm.counter);
+        do_mint(sign, referral_code);
+    }
+
+    fun do_mint(sign: &signer, referral_code: String) acquires CryptoMinter {
+        // Mints 1 NFT to the signer
+        let sender = signer::address_of(sign);
+
+        let resource = get_resource_signer();
+
+        let cm = borrow_global_mut<CryptoMinter>(@myself);
+
+        let count_str = u64_to_string(cm.counter);
+
+        // Set up the NFT
+        let collection_name = string::utf8(COLLECTION_NAME);
+        let tokendata_name = string::utf8(TOKEN_NAME);
+        string::append_utf8(&mut tokendata_name, b" #");
+        string::append(&mut tokendata_name, count_str);
+        let nft_maximum: u64 = 1;
+        let description = string::utf8(b"just a shovel");
+        let token_uri: string::String = string::utf8(TOKEN_URL);
+        let royalty_payee_address: address = @owner;
+        let royalty_points_denominator: u64 = 100;
+        let royalty_points_numerator: u64 = 5;
+        let token_mutate_config = token::create_token_mutability_config(
+            &vector<bool>[ false, true, false, false, true ]); // max, uri, royalty, description, property
+        let property_keys: vector<string::String> = vector::singleton(string::utf8(b"mint_number"));
+        let property_values: vector<vector<u8>> = vector::singleton(*string::bytes(&u64_to_hex_string(cm.counter)));
+        let property_types: vector<string::String> = vector::singleton(string::utf8(b"number"));
+
+        let token_data_id = token::create_tokendata(
+            &resource,
+            collection_name,
+            tokendata_name,
+            description,
+            nft_maximum,
+            token_uri,
+            royalty_payee_address,
+            royalty_points_denominator,
+            royalty_points_numerator,
+            token_mutate_config,
+            property_keys,
+            property_values,
+            property_types
+        );
+
+        let token_id = token::mint_token(&resource, token_data_id, 1);
+
+        token::initialize_token_store(sign);
+        token::opt_in_direct_transfer(sign, true);
+        token::transfer(&resource, token_id, sender, 1);
+
+        event::emit_event<MintEvent>(
+            &mut cm.mint_event,
+            MintEvent {
+                minter: signer::address_of(sign),
+                count: cm.counter,
+                referral_code
+            }
+        );
+        cm.counter = cm.counter + 1;
+    }
+
+    fun set_minted(sign: &signer, counter: u64) acquires CryptoMinter {
+        let cm = borrow_global_mut<CryptoMinter>(@myself);
+        let signer_addr = signer::address_of(sign);
+        assert!(table::contains(&cm.mints, signer_addr) == false, EHAS_ALREADY_CLAIMED_MINT);
+        table::add(&mut cm.mints, signer_addr, counter);
+    }
+
+    fun u64_to_hex_string(value: u64): string::String {
+        if (value == 0) {
+            return string::utf8(b"0x00")
+        };
+        let temp: u64 = value;
+        let length: u64 = 0;
+        while (temp != 0) {
+            length = length + 1;
+            temp = temp >> 8;
+        };
+        to_hex_string_fixed_length(value, length)
+    }
+
+    fun to_hex_string_fixed_length(value: u64, length: u64): string::String {
+        let buffer = vector::empty<u8>();
+
+        let i: u64 = 0;
+        while (i < length * 2) {
+            vector::push_back(&mut buffer, *vector::borrow(&mut HEX_SYMBOLS, (value & 0xf as u64)));
+            value = value >> 4;
+            i = i + 1;
+        };
+        assert!(value == 0, 1);
+        vector::append(&mut buffer, b"x0");
+        vector::reverse(&mut buffer);
+        string::utf8(buffer)
+    }
+
+    fun u64_to_string(value: u64): string::String {
+        if (value == 0) {
+            return string::utf8(b"0")
+        };
+        let buffer = vector::empty<u8>();
+        while (value != 0) {
+            vector::push_back(&mut buffer, ((48 + value % 10) as u8));
+            value = value / 10;
+        };
+        vector::reverse(&mut buffer);
+        string::utf8(buffer)
+    }
+
+}
