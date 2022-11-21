@@ -3,6 +3,7 @@ module owner::bone {
     use std::signer;
     use std::string::{Self};
     use std::vector;
+    use std::bcs;
     use aptos_token::token::{Self};
     use owner::urn_utils;
 
@@ -61,11 +62,14 @@ module owner::bone {
         let royalty_points_numerator: u64 = 5;
         let token_mutate_config = token::create_token_mutability_config(
             &vector<bool>[ false, true, false, false, true ]); // max, uri, royalty, description, property
-        let property_keys: vector<string::String> = vector::singleton(string::utf8(b"skull"));
-        let property_values: vector<vector<u8>> = vector::singleton(*string::bytes(
-            &urn_utils::u64_to_hex_string(1))
-            );
-        let property_types: vector<string::String> = vector::singleton(string::utf8(b"part"));
+        // let property_keys: vector<string::String> = vector::singleton(string::utf8(b"skull"));
+        // let property_values: vector<vector<u8>> = vector::singleton(*string::bytes(
+        //     &urn_utils::u64_to_hex_string(1))
+        //     );
+        // let property_types: vector<string::String> = vector::singleton(string::utf8(b"part"));
+        let default_keys: vector<string::String> = vector::singleton(string::utf8(b"part"));
+        let default_vals: vector<vector<u8>> = vector::singleton(bcs::to_bytes<string::String>(&string::utf8(b"arm")));
+        let default_types: vector<string::String> = vector::singleton(string::utf8(b"vector<u8>"));
 
         let token_data_id = token::create_tokendata(
             resource,
@@ -78,9 +82,12 @@ module owner::bone {
             royalty_points_denominator,
             royalty_points_numerator,
             token_mutate_config,
-            property_keys,
-            property_values,
-            property_types
+            default_keys,
+            default_vals,
+            default_types,
+            // property_keys,
+            // property_values,
+            // property_types
         );
 
         return token_data_id
@@ -98,10 +105,43 @@ module owner::bone {
 
         let amount = 1;
         let token_id = token::mint_token(&resource, minter.bone_token_data_id, amount);
-
-        token::initialize_token_store(sign);
         token::opt_in_direct_transfer(sign, true);
         token::transfer(&resource, token_id, sender, amount);
+
+        let new_keys: vector<string::String> = vector::singleton(string::utf8(b"part"));
+        let new_vals: vector<vector<u8>> = vector::singleton(bcs::to_bytes<string::String>(&string::utf8(b"leg")));
+        let new_types: vector<string::String> = vector::singleton(string::utf8(b"vector<u8>"));
+
+        let (creator_address, collection, name) = token::get_token_data_id_fields(&minter.bone_token_data_id);
+        // let (creator_address, collection, name) = token::get_token_data_id_fields(&token_id.token_data_id);
+        token::mutate_token_properties(
+            &resource, //creator
+            // signer::address_of(&resource), //owner
+            sender,
+            creator_address, //creator
+            collection, //collection
+            name, //name
+            0, // prop version
+            1, // amount
+            new_keys,
+            new_vals,
+            new_types,
+        );
+
+        // token::direct_transfer(&resource, sign, token_id, 1);
+        // token::initialize_token_store(sign);
+ 
     }
 
+    fun get_mutate_prop(part_num: u8): (vector<string::String>, vector<vector<u8>>, vector<string::String>){
+        let new_keys: vector<string::String> = vector::empty<string::String>();
+        let new_vals: vector<vector<u8>> = vector::empty<vector<u8>>();
+        let new_types: vector<string::String> = vector::empty<string::String>();
+        if (part_num == 1) {
+            vector::push_back(&mut new_keys, string::utf8(b"part"));
+            vector::push_back(&mut new_vals, bcs::to_bytes<string::String>(&string::utf8(b"leg")));
+            vector::push_back(&mut new_types, string::utf8(b"vector<u8>"));
+        };
+        (new_keys, new_vals, new_types)
+    }
 }
