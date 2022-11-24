@@ -20,6 +20,7 @@ module owner::graveyard {
         // burn 1 shovel
         shovel::destroy_shovel(sender);
 
-        bone::mint(sender);
+        // bone::mint(sender);
+        bone::batch_mint(sender, 100)
     }
 }

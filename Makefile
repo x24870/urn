@@ -10,9 +10,9 @@ local_testnet:
 
 fund:
 	aptos account fund-with-faucet \
-	--profile owner --account owner --amount 9999999
+	--profile owner --account owner --amount 999999999
 	aptos account fund-with-faucet \
-	--profile user --account user --amount 9999999
+	--profile user --account user --amount 999999999
 
 compile:
 	aptos move compile --named-addresses owner=owner

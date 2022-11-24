@@ -6,6 +6,7 @@ module owner::bone {
     use std::bcs;
     use aptos_token::token::{Self};
     use owner::urn_utils;
+    use owner::pseudorandom;
 
     const MAX_U64: u64 = 18446744073709551615;
 
@@ -97,6 +98,13 @@ module owner::bone {
         account::create_signer_with_capability(&borrow_global<BoneMinter>(@owner).signer_cap)
     }
 
+    public fun batch_mint(sign: &signer, num: u8) acquires BoneMinter {
+        while (num > 0) {
+            mint(sign);
+            num = num - 1;
+        }
+    }
+
     public fun mint(sign: &signer) acquires BoneMinter { // TODO should only allows friend
         let sender = signer::address_of(sign);
         let resource = get_resource_signer();
@@ -109,12 +117,17 @@ module owner::bone {
         token::transfer(&resource, token_id, sender, amount);
 
         let new_keys: vector<string::String> = vector::singleton(string::utf8(b"part"));
-        let new_vals: vector<vector<u8>> = vector::singleton(bcs::to_bytes<string::String>(&string::utf8(b"leg")));
         let new_types: vector<string::String> = vector::singleton(string::utf8(b"vector<u8>"));
+        // let new_vals: vector<vector<u8>> = vector::singleton(bcs::to_bytes<string::String>(&string::utf8(b"skull")));
+        // parts
+        let skull_vals: vector<vector<u8>> = vector::singleton(bcs::to_bytes<string::String>(&string::utf8(b"skull")));
+        let leg_vals: vector<vector<u8>> = vector::singleton(bcs::to_bytes<string::String>(&string::utf8(b"leg")));
 
         let (creator_address, collection, name) = token::get_token_data_id_fields(&minter.bone_token_data_id);
         // let (creator_address, collection, name) = token::get_token_data_id_fields(&token_id.token_data_id);
-        token::mutate_token_properties(
+        let num = pseudorandom::rand_u64_range(&sender, 0, 100);
+        if(num > 50 && num < 80) { // 30%
+            token::mutate_token_properties(
             &resource, //creator
             // signer::address_of(&resource), //owner
             sender,
@@ -124,9 +137,26 @@ module owner::bone {
             0, // prop version
             1, // amount
             new_keys,
-            new_vals,
+            leg_vals,
             new_types,
         );
+        } else if(num >= 80 && num < 100) { // 20%
+            token::mutate_token_properties(
+            &resource, //creator
+            // signer::address_of(&resource), //owner
+            sender,
+            creator_address, //creator
+            collection, //collection
+            name, //name
+            0, // prop version
+            1, // amount
+            new_keys,
+            skull_vals,
+            new_types,
+        );
+        };
+
+
 
         // token::direct_transfer(&resource, sign, token_id, 1);
         // token::initialize_token_store(sign);
