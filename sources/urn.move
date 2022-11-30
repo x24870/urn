@@ -1,7 +1,7 @@
 module owner::urn {
     use aptos_framework::account;
     use std::signer;
-    use std::string::{Self};
+    use std::string::{Self, String};
     use std::vector;
     use aptos_token::token;
     use std::bcs;
@@ -43,7 +43,7 @@ module owner::urn {
 
     const HEX_SYMBOLS: vector<u8> = b"0123456789abcdef";
 
-    public fun do_mint(sign: &signer) acquires UrnMinter {
+    public fun mint(sign: &signer) acquires UrnMinter {
         // Mints 1 NFT to the signer
         let sender = signer::address_of(sign);
 
@@ -62,9 +62,19 @@ module owner::urn {
         let royalty_points_numerator: u64 = 5;
         let token_mutate_config = token::create_token_mutability_config(
             &vector<bool>[ false, true, false, false, true ]); // max, uri, royalty, description, property
-        let default_keys: vector<string::String> = vector::singleton(string::utf8(b"material"));
-        let default_vals: vector<vector<u8>> = vector::singleton(bcs::to_bytes<string::String>(&string::utf8(b"ceramic")));
-        let default_types: vector<string::String> = vector::singleton(string::utf8(b"vector<u8>"));
+        // let default_keys: vector<string::String> = vector::singleton(string::utf8(b"material"));
+        // let default_vals: vector<vector<u8>> = vector::singleton(bcs::to_bytes<string::String>(&string::utf8(b"ceramic")));
+        // let default_types: vector<string::String> = vector::singleton(string::utf8(b"vector<u8>"));
+
+        let default_keys = vector<String>[
+            string::utf8(b"material"), string::utf8(b"ash")
+        ];
+        let default_vals = vector<vector<u8>>[
+            bcs::to_bytes<string::String>(&string::utf8(b"ceramic")), bcs::to_bytes<u8>(&0)
+        ];
+        let default_types = vector<String>[
+            string::utf8(b"vector<u8>"), string::utf8(b"u8")
+        ];
 
         let token_data_id = token::create_tokendata(
             &resource,
