@@ -5,7 +5,7 @@ module owner::bone {
     use std::vector;
     use std::bcs;
     use aptos_token::token::{Self};
-    use owner::urn_utils;
+    // use owner::urn_utils;
     use owner::pseudorandom;
 
     const MAX_U64: u64 = 18446744073709551615;

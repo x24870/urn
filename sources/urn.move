@@ -2,10 +2,12 @@ module owner::urn {
     use aptos_framework::account;
     use std::signer;
     use std::string::{Self, String};
-    use std::vector;
-    use aptos_token::token;
+    // use std::vector;
+    use aptos_token::token::{Self, TokenId};
     use std::bcs;
     use aptos_framework::event::{Self, EventHandle};
+    use aptos_token::property_map::{Self};
+    use owner::shovel;
 
     const MAX_U64: u64 = 18446744073709551615;
     const COLLECTION_NAME: vector<u8> = b"URN";
@@ -15,8 +17,12 @@ module owner::urn {
     }
 
     struct UrnMinter has store, key {
-        signer_cap: account::SignerCapability,
+        // signer_cap: account::SignerCapability,
+        res_acct_addr: address,
         mint_event: EventHandle<MintEvent>,
+        token_data_id: token::TokenDataId,
+        collection: string::String,
+        name: string::String,
     }
 
     const ENOT_AUTHORIZED: u64 = 1;
@@ -28,29 +34,30 @@ module owner::urn {
     const TOKEN_URL: vector<u8> = b"https://urn.jpg";
 
     fun init_module(sender: &signer) {
-        let (resource, signer_cap) = account::create_resource_account(sender, vector::singleton(1));
+        // let (resource, signer_cap) = account::create_resource_account(sender, vector::singleton(1));
+        let resource = shovel::get_resource_signer();
+        // let signer_cap = shovel::get_signer_cap();
 
+        let token_data_id = create_urn_token_data(&resource);
+        let res_acct_addr = signer::address_of(&resource);
 
         move_to(sender, UrnMinter {
-            signer_cap,
+            // signer_cap,
+            res_acct_addr,
             mint_event: account::new_event_handle<MintEvent>(&resource),
+            token_data_id: token_data_id,
+            collection: string::utf8(COLLECTION_NAME),
+            name: string::utf8(TOKEN_NAME),
         });
     }
 
-    fun get_resource_signer(): signer acquires UrnMinter {
-        account::create_signer_with_capability(&borrow_global<UrnMinter>(@owner).signer_cap)
-    }
+    // fun get_resource_signer(): signer acquires UrnMinter {
+    //     account::create_signer_with_capability(&borrow_global<UrnMinter>(@owner).signer_cap)
+    // }
 
     const HEX_SYMBOLS: vector<u8> = b"0123456789abcdef";
 
-    public fun mint(sign: &signer) acquires UrnMinter {
-        // Mints 1 NFT to the signer
-        let sender = signer::address_of(sign);
-
-        let resource = get_resource_signer();
-
-        let um = borrow_global_mut<UrnMinter>(@owner);
-
+    fun create_urn_token_data(resource: &signer): token::TokenDataId {
         // Set up the NFT
         let collection_name = string::utf8(COLLECTION_NAME);
         let tokendata_name = string::utf8(TOKEN_NAME);
@@ -77,7 +84,7 @@ module owner::urn {
         ];
 
         let token_data_id = token::create_tokendata(
-            &resource,
+            resource,
             collection_name,
             tokendata_name,
             description,
@@ -92,7 +99,18 @@ module owner::urn {
             default_types,
         );
 
-        let token_id = token::mint_token(&resource, token_data_id, 1);
+        return token_data_id
+    }
+
+    public fun mint(sign: &signer) acquires UrnMinter {
+        // Mints 1 NFT to the signer
+        let sender = signer::address_of(sign);
+
+        let resource = shovel::get_resource_signer();
+
+        let um = borrow_global_mut<UrnMinter>(@owner);
+
+        let token_id = token::mint_token(&resource, um.token_data_id, 1);
 
         token::initialize_token_store(sign);
         token::opt_in_direct_transfer(sign, true);
@@ -106,5 +124,49 @@ module owner::urn {
         );
     }
 
+    // public fun fill(sign: &signer, token_id: TokenId, amount: u8) {
+        
+    //     token::mutate_one_token(
+    //         sign, 
+    //         signer::address_of(sign),
+    //         token_id,
 
+    //         )
+    // }
+
+    public fun destroy_urn(sign: &signer) acquires UrnMinter {
+        let um = borrow_global<UrnMinter>(@owner);
+
+        token::burn(
+            sign,
+            um.res_acct_addr,
+            um.collection,
+            um.name,
+            0,
+            1,
+        );
+    }
+
+    public fun is_full(sign: &signer, token_id: TokenId): bool {
+        let pm = token::get_property_map(
+            signer::address_of(sign),
+            token_id,
+        );
+
+        if (property_map::read_u64(&pm, &string::utf8(b"ash")) == 100) {
+            true
+        } else {
+            false
+        }
+        
+    }
+
+    #[test(user = @0xa11ce, owner = @owner)]
+    fun test_destroy_urn(owner: &signer, alice: &signer) {
+        account::create_account_for_test(signer::address_of(user));
+        account::create_account_for_test(signer::address_of(owner));
+
+        shovel::init_module(owner);
+        init_module(owner);
+    }
 }

@@ -8,6 +8,9 @@ init_profiles:
 local_testnet:
 	aptos node run-local-testnet --with-faucet
 
+test:
+	aptos move test --named-addresses owner=owner 
+
 fund:
 	aptos account fund-with-faucet \
 	--profile owner --account owner --amount 999999999

@@ -12,10 +12,12 @@ module owner::shovel {
     const MAX_U64: u64 = 18446744073709551615;
     const BURNABLE_BY_OWNER: vector<u8> = b"TOKEN_BURNABLE_BY_OWNER";
 
+    friend owner::urn;
+
     struct ShovelMinter has store, key {
         signer_cap: account::SignerCapability,
         res_acct_addr: address,
-        shovel_token_data_id: token::TokenDataId,
+        token_data_id: token::TokenDataId,
         collection: string::String,
         name: string::String,
     }
@@ -29,7 +31,7 @@ module owner::shovel {
 
     const TOKEN_URL: vector<u8> = b"https://shovel.jpg";
 
-    fun init_module(sender: &signer) {
+    public(friend) fun init_module(sender: &signer) {
         // Don't run setup more than once
         if (exists<ShovelMinter>(signer::address_of(sender))) {
             return
@@ -47,12 +49,12 @@ module owner::shovel {
         token::create_collection(&resource, collection_name, description, collection_uri, maximum_supply, mutate_setting);
 
         // create shovel token data
-        let shovel_token_data_id = create_shovel_token_data(&resource);
+        let token_data_id = create_shovel_token_data(&resource);
 
         move_to(sender, ShovelMinter {
             signer_cap: signer_cap,
             res_acct_addr: signer::address_of(&resource),
-            shovel_token_data_id: shovel_token_data_id,
+            token_data_id: token_data_id,
             collection: collection_name,
             name: string::utf8(TOKEN_NAME),
         });
@@ -97,12 +99,12 @@ module owner::shovel {
         return token_data_id
     }
 
-    fun get_resource_signer(): signer acquires ShovelMinter {
+    public(friend) fun get_resource_signer(): signer acquires ShovelMinter {
         account::create_signer_with_capability(&borrow_global<ShovelMinter>(@owner).signer_cap)
     }
 
     public fun destroy_shovel(sender: &signer) acquires ShovelMinter {
-        // let shovel_token_data_id = shovel::get_shovel_token_data_id();
+        // let token_data_id = shovel::get_token_data_id();
         // let resource = get_resource_signer();
         let shovel_minter = borrow_global<ShovelMinter>(@owner);
         // let sender_addr = signer::address_of(sender);
@@ -139,7 +141,7 @@ module owner::shovel {
         let sm = borrow_global_mut<ShovelMinter>(@owner);
 
         let amount = 5;
-        let token_id = token::mint_token(&resource, sm.shovel_token_data_id, amount); // TODO random shovel bundle
+        let token_id = token::mint_token(&resource, sm.token_data_id, amount); // TODO random shovel bundle
 
         token::initialize_token_store(sign);
         token::opt_in_direct_transfer(sign, true);
