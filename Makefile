@@ -5,6 +5,9 @@ init_profiles:
 	aptos init --profile owner --rest-url ${REST_URL} --faucet-url ${FAUCET_URL}
 	aptos init --profile user --rest-url ${REST_URL} --faucet-url ${FAUCET_URL}
 
+init_testnet_prof:
+	aptos init --profile testnet --rest-url "https://fullnode.testnet.aptoslabs.com/v1"
+
 local_testnet:
 	aptos node run-local-testnet --with-faucet
 
@@ -20,9 +23,16 @@ fund:
 compile:
 	aptos move compile --named-addresses owner=owner
 
+compile_testnet:
+	aptos move compile --named-addresses owner=testnet
+
 publish:
 	aptos move publish --named-addresses owner=owner \
 	--sender-account owner --profile owner
+
+publish_testnet:
+	aptos move publish --named-addresses owner=testnet \
+	--sender-account testnet --profile testnet
 
 mint_shovel:
 	aptos move run-script --assume-yes \
@@ -44,3 +54,6 @@ query_owner_res:
 
 query_user_res:
 		aptos account list --query resources --account user --profile user
+
+query_testnet_res:
+		aptos account list --query resources --account testnet --profile testnet
