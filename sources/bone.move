@@ -136,15 +136,15 @@ module owner::bone {
         // mint
         let num = pseudorandom::rand_u64_range(&sender, 0, 100);
         let token_id: token::TokenId;
-        if(num > 80) {
+        if(num > 95) { // 5%
             token_id = token::mint_token(&resource, minter.skull_token_data_id, amount);
-        } else if(num > 60) {
+        } else if(num > 85) { // 10%
             token_id = token::mint_token(&resource, minter.chest_token_data_id, amount);
-        } else if(num > 40) {
+        } else if(num > 70) { // 15%
             token_id = token::mint_token(&resource, minter.hip_token_data_id, amount);
-        } else if(num > 20) {
+        } else if(num > 40) { // 30%
             token_id = token::mint_token(&resource, minter.leg_token_data_id, amount);
-        }else {
+        }else { // 40%
             token_id = token::mint_token(&resource, minter.arm_token_data_id, amount);
         };
         
