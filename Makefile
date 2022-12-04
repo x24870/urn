@@ -29,6 +29,11 @@ mint_shovel:
 	--compiled-script-path build/urn/bytecode_scripts/mint_shovel.mv \
 	--sender-account=user --profile=user
 
+mint_urn:
+	aptos move run-script --assume-yes \
+	--compiled-script-path build/urn/bytecode_scripts/mint_urn.mv \
+	--sender-account=user --profile=user
+
 dig:
 	aptos move run-script --assume-yes \
 	--compiled-script-path build/urn/bytecode_scripts/dig.mv \

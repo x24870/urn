@@ -35,6 +35,7 @@ module owner::urn {
 
     fun init_module(sender: &signer) {
         // let (resource, signer_cap) = account::create_resource_account(sender, vector::singleton(1));
+        shovel::init(sender);
         let resource = shovel::get_resource_signer();
         // let signer_cap = shovel::get_signer_cap();
 
@@ -162,11 +163,11 @@ module owner::urn {
     }
 
     #[test(user = @0xa11ce, owner = @owner)]
-    fun test_destroy_urn(owner: &signer, alice: &signer) {
+    fun test_destroy_urn(owner: &signer, user: &signer) {
         account::create_account_for_test(signer::address_of(user));
         account::create_account_for_test(signer::address_of(owner));
 
-        shovel::init_module(owner);
+        shovel::init(owner);
         init_module(owner);
     }
 }

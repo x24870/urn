@@ -31,7 +31,7 @@ module owner::shovel {
 
     const TOKEN_URL: vector<u8> = b"https://shovel.jpg";
 
-    public(friend) fun init_module(sender: &signer) {
+    public(friend) fun init(sender: &signer) {
         // Don't run setup more than once
         if (exists<ShovelMinter>(signer::address_of(sender))) {
             return
@@ -130,11 +130,7 @@ module owner::shovel {
 
     const HEX_SYMBOLS: vector<u8> = b"0123456789abcdef";
 
-    public entry fun claim_mint(sign: &signer) acquires ShovelMinter {
-        do_mint(sign);
-    }
-
-    fun do_mint(sign: &signer) acquires ShovelMinter {
+    public entry fun mint(sign: &signer) acquires ShovelMinter {
         let sender = signer::address_of(sign);
         let resource = get_resource_signer();
 
