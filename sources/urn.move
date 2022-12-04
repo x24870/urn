@@ -12,6 +12,7 @@ module owner::urn {
 
     const MAX_U64: u64 = 18446744073709551615;
     const COLLECTION_NAME: vector<u8> = b"URN";
+    const BURNABLE_BY_OWNER: vector<u8> = b"TOKEN_BURNABLE_BY_OWNER";
 
     struct MintEvent has store, drop {
         minter: address,
@@ -76,14 +77,18 @@ module owner::urn {
         // let default_vals: vector<vector<u8>> = vector::singleton(bcs::to_bytes<string::String>(&string::utf8(b"ceramic")));
         // let default_types: vector<string::String> = vector::singleton(string::utf8(b"vector<u8>"));
 
+        // let property_keys = vector<String>[string::utf8(BURNABLE_BY_OWNER)];
+        // let property_values = vector<vector<u8>>[bcs::to_bytes<bool>(&true)];
+        // let property_types = vector<String>[string::utf8(b"bool")];
+
         let default_keys = vector<String>[
-            string::utf8(b"material"), string::utf8(b"ash")
+            string::utf8(b"material"), string::utf8(b"ash"), string::utf8(BURNABLE_BY_OWNER)
         ];
         let default_vals = vector<vector<u8>>[
-            bcs::to_bytes<string::String>(&string::utf8(b"ceramic")), bcs::to_bytes<u8>(&0)
+            bcs::to_bytes<string::String>(&string::utf8(b"ceramic")), bcs::to_bytes<u8>(&0), bcs::to_bytes<bool>(&true)
         ];
         let default_types = vector<String>[
-            string::utf8(b"vector<u8>"), string::utf8(b"u8")
+            string::utf8(b"vector<u8>"), string::utf8(b"u8"), string::utf8(b"bool")
         ];
 
         let token_data_id = token::create_tokendata(
@@ -165,10 +170,14 @@ module owner::urn {
     }
 
     #[test(user = @0xa11ce, owner = @owner)]
-    fun test_destroy_urn(owner: &signer, user: &signer) {
+    fun test_destroy_urn(
+        owner: &signer, user: &signer
+        ) acquires UrnMinter {
         account::create_account_for_test(signer::address_of(user));
         account::create_account_for_test(signer::address_of(owner));
 
         init_module(owner);
+        mint(user);
+        destroy_urn(user);
     }
 }
