@@ -1,7 +1,7 @@
 module owner::bone {
     use aptos_framework::account;
     use std::signer;
-    use std::string::{Self};
+    use std::string::{Self, String};
     use std::vector;
     use std::bcs;
     use aptos_token::token::{Self};
@@ -9,11 +9,15 @@ module owner::bone {
     use owner::pseudorandom;
 
     const MAX_U64: u64 = 18446744073709551615;
-
+    friend owner::urn;
 
     struct BoneMinter has store, key {
         signer_cap: account::SignerCapability,
-        bone_token_data_id: token::TokenDataId,
+        skull_token_data_id: token::TokenDataId,
+        chest_token_data_id: token::TokenDataId,
+        hip_token_data_id: token::TokenDataId,
+        leg_token_data_id: token::TokenDataId,
+        arm_token_data_id: token::TokenDataId,
     }
 
     const ENOT_AUTHORIZED: u64 = 1;
@@ -21,11 +25,18 @@ module owner::bone {
     const EMINTING_NOT_ENABLED: u64 = 3;
 
     const COLLECTION_NAME: vector<u8> = b"URN";
-    const TOKEN_NAME: vector<u8> = b"BONE";
+    // const TOKEN_NAME: vector<u8> = b"BONE";
 
-    const TOKEN_URL: vector<u8> = b"https://bone.jpg";
 
-    fun init(sender: &signer) {
+    // const TOKEN_URL: vector<u8> = b"https://bone.jpg";
+    const SKULL_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmSioUrHchtStNHXCHSzS8M6HVHDV8dPojgwF4EqpFBtf5/skull.jpg";
+    const CHEST_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmSioUrHchtStNHXCHSzS8M6HVHDV8dPojgwF4EqpFBtf5/bone.jpg";
+    const HIP_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmSioUrHchtStNHXCHSzS8M6HVHDV8dPojgwF4EqpFBtf5/hip.jpg";
+    const LEG_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmSioUrHchtStNHXCHSzS8M6HVHDV8dPojgwF4EqpFBtf5/leg.jpg";
+    const ARM_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmSioUrHchtStNHXCHSzS8M6HVHDV8dPojgwF4EqpFBtf5/hand.jpg";
+
+
+    public(friend) fun init(sender: &signer) {
         // Don't run setup more than once
         if (exists<BoneMinter>(signer::address_of(sender))) {
             return
@@ -44,20 +55,28 @@ module owner::bone {
         token::create_collection(&resource, collection_name, description, collection_uri, maximum_supply, mutate_setting);
 
         // create shovel token data
-        let bone_token_data_id = create_bone_token_data(&resource);
+        let skull_token_data_id = create_bone_token_data(&resource, string::utf8(b"skull"), string::utf8(b"skull"));
+        let chest_token_data_id = create_bone_token_data(&resource, string::utf8(b"chest"), string::utf8(b"chest"));
+        let hip_token_data_id = create_bone_token_data(&resource, string::utf8(b"hip"), string::utf8(b"hip"));
+        let leg_token_data_id = create_bone_token_data(&resource, string::utf8(b"leg"), string::utf8(b"leg"));
+        let arm_token_data_id = create_bone_token_data(&resource, string::utf8(b"arm"), string::utf8(b"arm"));
 
         move_to(sender, BoneMinter {
             signer_cap,
-            bone_token_data_id,
+            skull_token_data_id,
+            chest_token_data_id,
+            hip_token_data_id,
+            leg_token_data_id,
+            arm_token_data_id,
         });
     }
 
-    fun create_bone_token_data(resource: &signer): token::TokenDataId {
+    fun create_bone_token_data(resource: &signer, token_name: String, token_uri: String): token::TokenDataId {
         let collection_name = string::utf8(COLLECTION_NAME);
-        let tokendata_name = string::utf8(TOKEN_NAME);
+        // let tokendata_name = string::utf8(TOKEN_NAME);
         let nft_maximum: u64 = 0;
         let description = string::utf8(b"Your grandpa or grandma");
-        let token_uri: string::String = string::utf8(TOKEN_URL);
+        // let token_uri: string::String = string::utf8(TOKEN_URL);
         let royalty_payee_address: address = @owner;
         let royalty_points_denominator: u64 = 100;
         let royalty_points_numerator: u64 = 5;
@@ -75,7 +94,8 @@ module owner::bone {
         let token_data_id = token::create_tokendata(
             resource,
             collection_name,
-            tokendata_name,
+            // tokendata_name,
+            token_name,
             description,
             nft_maximum,
             token_uri,
@@ -112,51 +132,63 @@ module owner::bone {
         let minter = borrow_global_mut<BoneMinter>(@owner);
 
         let amount = 1;
-        let token_id = token::mint_token(&resource, minter.bone_token_data_id, amount);
+
+        // mint
+        let num = pseudorandom::rand_u64_range(&sender, 0, 100);
+        let token_id: token::TokenId;
+        if(num > 80) {
+            token_id = token::mint_token(&resource, minter.skull_token_data_id, amount);
+        } else if(num > 60) {
+            token_id = token::mint_token(&resource, minter.chest_token_data_id, amount);
+        } else if(num > 40) {
+            token_id = token::mint_token(&resource, minter.hip_token_data_id, amount);
+        } else if(num > 20) {
+            token_id = token::mint_token(&resource, minter.leg_token_data_id, amount);
+        }else {
+            token_id = token::mint_token(&resource, minter.arm_token_data_id, amount);
+        };
+        
         token::opt_in_direct_transfer(sign, true);
         token::transfer(&resource, token_id, sender, amount);
 
-        let new_keys: vector<string::String> = vector::singleton(string::utf8(b"part"));
-        let new_types: vector<string::String> = vector::singleton(string::utf8(b"vector<u8>"));
+        // let new_keys: vector<string::String> = vector::singleton(string::utf8(b"part"));
+        // let new_types: vector<string::String> = vector::singleton(string::utf8(b"vector<u8>"));
         // let new_vals: vector<vector<u8>> = vector::singleton(bcs::to_bytes<string::String>(&string::utf8(b"skull")));
         // parts
-        let skull_vals: vector<vector<u8>> = vector::singleton(bcs::to_bytes<string::String>(&string::utf8(b"skull")));
-        let leg_vals: vector<vector<u8>> = vector::singleton(bcs::to_bytes<string::String>(&string::utf8(b"leg")));
+        // let skull_vals: vector<vector<u8>> = vector::singleton(bcs::to_bytes<string::String>(&string::utf8(b"skull")));
+        // let leg_vals: vector<vector<u8>> = vector::singleton(bcs::to_bytes<string::String>(&string::utf8(b"leg")));
 
-        let (creator_address, collection, name) = token::get_token_data_id_fields(&minter.bone_token_data_id);
-        // let (creator_address, collection, name) = token::get_token_data_id_fields(&token_id.token_data_id);
-        let num = pseudorandom::rand_u64_range(&sender, 0, 100);
-        if(num > 50 && num < 80) { // 30%
-            token::mutate_token_properties(
-            &resource, //creator
-            // signer::address_of(&resource), //owner
-            sender,
-            creator_address, //creator
-            collection, //collection
-            name, //name
-            0, // prop version
-            1, // amount
-            new_keys,
-            leg_vals,
-            new_types,
-        );
-        } else if(num >= 80 && num < 100) { // 20%
-            token::mutate_token_properties(
-            &resource, //creator
-            // signer::address_of(&resource), //owner
-            sender,
-            creator_address, //creator
-            collection, //collection
-            name, //name
-            0, // prop version
-            1, // amount
-            new_keys,
-            skull_vals,
-            new_types,
-        );
-        };
-
-
+        // let (creator_address, collection, name) = token::get_token_data_id_fields(&minter.bone_token_data_id);
+        // let num = pseudorandom::rand_u64_range(&sender, 0, 100);        
+        // if(num > 50 && num < 80) { // 30%
+        //     token::mutate_token_properties(
+        //     &resource, //creator
+        //     // signer::address_of(&resource), //owner
+        //     sender,
+        //     creator_address, //creator
+        //     collection, //collection
+        //     name, //name
+        //     0, // prop version
+        //     1, // amount
+        //     new_keys,
+        //     leg_vals,
+        //     new_types,
+        // );
+        // } else if(num >= 80 && num < 100) { // 20%
+        //     token::mutate_token_properties(
+        //     &resource, //creator
+        //     // signer::address_of(&resource), //owner
+        //     sender,
+        //     creator_address, //creator
+        //     collection, //collection
+        //     name, //name
+        //     0, // prop version
+        //     1, // amount
+        //     new_keys,
+        //     skull_vals,
+        //     new_types,
+        // );
+        // };
 
         // token::direct_transfer(&resource, sign, token_id, 1);
         // token::initialize_token_store(sign);

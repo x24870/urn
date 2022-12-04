@@ -29,7 +29,7 @@ module owner::shovel {
     const COLLECTION_NAME: vector<u8> = b"URN";
     const TOKEN_NAME: vector<u8> = b"SHOVEL";
 
-    const TOKEN_URL: vector<u8> = b"https://shovel.jpg";
+    const TOKEN_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmSioUrHchtStNHXCHSzS8M6HVHDV8dPojgwF4EqpFBtf5/shovel.jpg";
 
     public(friend) fun init(sender: &signer) {
         // Don't run setup more than once

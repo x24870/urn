@@ -8,6 +8,7 @@ module owner::urn {
     use aptos_framework::event::{Self, EventHandle};
     use aptos_token::property_map::{Self};
     use owner::shovel;
+    use owner::bone;
 
     const MAX_U64: u64 = 18446744073709551615;
     const COLLECTION_NAME: vector<u8> = b"URN";
@@ -31,11 +32,12 @@ module owner::urn {
 
     const TOKEN_NAME: vector<u8> = b"URN";
 
-    const TOKEN_URL: vector<u8> = b"https://urn.jpg";
+    const TOKEN_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmSioUrHchtStNHXCHSzS8M6HVHDV8dPojgwF4EqpFBtf5/urn.jpg";
 
     fun init_module(sender: &signer) {
         // let (resource, signer_cap) = account::create_resource_account(sender, vector::singleton(1));
         shovel::init(sender);
+        bone::init(sender);
         let resource = shovel::get_resource_signer();
         // let signer_cap = shovel::get_signer_cap();
 
@@ -167,7 +169,6 @@ module owner::urn {
         account::create_account_for_test(signer::address_of(user));
         account::create_account_for_test(signer::address_of(owner));
 
-        shovel::init(owner);
         init_module(owner);
     }
 }
