@@ -25,7 +25,7 @@ module owner::bone {
 
     const TOKEN_URL: vector<u8> = b"https://bone.jpg";
 
-    fun init_module(sender: &signer) {
+    fun init(sender: &signer) {
         // Don't run setup more than once
         if (exists<BoneMinter>(signer::address_of(sender))) {
             return
