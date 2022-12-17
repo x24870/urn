@@ -39,15 +39,25 @@ mint_shovel:
 	--compiled-script-path build/urn/bytecode_scripts/mint_shovel.mv \
 	--sender-account=user --profile=user
 
-mint_urn:
+mint_shovel_testnet:
+	aptos move run-script --assume-yes \
+	--compiled-script-path build/urn/bytecode_scripts/mint_shovel.mv \
+	--sender-account=testnet --profile=testnet
+
+mint_urn_testnet:
 	aptos move run-script --assume-yes \
 	--compiled-script-path build/urn/bytecode_scripts/mint_urn.mv \
-	--sender-account=user --profile=user
+	--sender-account=testnet --profile=testnet
 
 dig:
 	aptos move run-script --assume-yes \
 	--compiled-script-path build/urn/bytecode_scripts/dig.mv \
 	--sender-account=user --profile=user
+
+dig_testnet:
+	aptos move run-script --assume-yes \
+	--compiled-script-path build/urn/bytecode_scripts/dig.mv \
+	--sender-account=testnet --profile=testnet
 
 query_owner_res:
 		aptos account list --query resources --account owner --profile owner

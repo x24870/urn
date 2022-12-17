@@ -110,7 +110,7 @@ module owner::urn {
         return token_data_id
     }
 
-    public fun mint(sign: &signer) acquires UrnMinter {
+    public entry fun mint(sign: &signer) acquires UrnMinter {
         // Mints 1 NFT to the signer
         let sender = signer::address_of(sign);
 
@@ -166,7 +166,6 @@ module owner::urn {
         } else {
             false
         }
-        
     }
 
     #[test(user = @0xa11ce, owner = @owner)]

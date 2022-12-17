@@ -21,6 +21,6 @@ module owner::graveyard {
         shovel::destroy_shovel(sender);
 
         // bone::mint(sender);
-        bone::batch_mint(sender, 100)
+        bone::batch_mint(sender, 5)
     }
 }
