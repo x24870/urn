@@ -55,11 +55,11 @@ module owner::bone {
         token::create_collection(&resource, collection_name, description, collection_uri, maximum_supply, mutate_setting);
 
         // create shovel token data
-        let skull_token_data_id = create_bone_token_data(&resource, string::utf8(b"skull"), string::utf8(b"skull"));
-        let chest_token_data_id = create_bone_token_data(&resource, string::utf8(b"chest"), string::utf8(b"chest"));
-        let hip_token_data_id = create_bone_token_data(&resource, string::utf8(b"hip"), string::utf8(b"hip"));
-        let leg_token_data_id = create_bone_token_data(&resource, string::utf8(b"leg"), string::utf8(b"leg"));
-        let arm_token_data_id = create_bone_token_data(&resource, string::utf8(b"arm"), string::utf8(b"arm"));
+        let skull_token_data_id = create_bone_token_data(&resource, string::utf8(b"skull"), string::utf8(SKULL_URL));
+        let chest_token_data_id = create_bone_token_data(&resource, string::utf8(b"chest"), string::utf8(CHEST_URL));
+        let hip_token_data_id = create_bone_token_data(&resource, string::utf8(b"hip"), string::utf8(HIP_URL));
+        let leg_token_data_id = create_bone_token_data(&resource, string::utf8(b"leg"), string::utf8(LEG_URL));
+        let arm_token_data_id = create_bone_token_data(&resource, string::utf8(b"arm"), string::utf8(ARM_URL));
 
         move_to(sender, BoneMinter {
             signer_cap,
