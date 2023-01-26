@@ -3,7 +3,7 @@ module owner::shovel {
     // use aptos_std::table;
     use std::signer;
     use std::string::{Self, String};
-    use std::vector;
+    // use std::vector;
     use std::bcs;
     use aptos_token::token::{Self};
     // use owner::urn_utils;
@@ -12,14 +12,13 @@ module owner::shovel {
     const MAX_U64: u64 = 18446744073709551615;
     const BURNABLE_BY_OWNER: vector<u8> = b"TOKEN_BURNABLE_BY_OWNER";
 
-    friend owner::urn;
+    friend owner::urn_to_earn;
 
     struct ShovelMinter has store, key {
         res_acct_addr: address,
         token_data_id: token::TokenDataId,
         collection: string::String,
         name: string::String,
-        cap: account::SignerCapability,
     }
 
     const ENOT_AUTHORIZED: u64 = 1;
@@ -29,13 +28,13 @@ module owner::shovel {
     const TOKEN_NAME: vector<u8> = b"SHOVEL";
     const TOKEN_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmSioUrHchtStNHXCHSzS8M6HVHDV8dPojgwF4EqpFBtf5/shovel.jpg";
 
-    public(friend) fun init_shovel(sender: &signer, collection_name: String, cap: account::SignerCapability) {
+    public(friend) fun init_shovel(sender: &signer, collection_name: String, cap: &account::SignerCapability) {
         // Don't run setup more than once
         if (exists<ShovelMinter>(signer::address_of(sender))) {
             return
         };
 
-        let resource = create_signer_with_capability(&cap);
+        let resource = create_signer_with_capability(cap);
 
         // create shovel token data
         let token_data_id = create_shovel_token_data(&resource, collection_name);
@@ -45,7 +44,6 @@ module owner::shovel {
             token_data_id: token_data_id,
             collection: collection_name,
             name: string::utf8(TOKEN_NAME),
-            cap: cap,
         });
     }
 
@@ -109,18 +107,12 @@ module owner::shovel {
         );
     }
 
-    const HEX_SYMBOLS: vector<u8> = b"0123456789abcdef";
-
-    public entry fun mint(sign: &signer) acquires ShovelMinter {
+    public(friend) fun mint(_sign: &signer, cap: &account::SignerCapability): token::TokenId acquires ShovelMinter {
         let shovelMinter = borrow_global_mut<ShovelMinter>(@owner);
-        let resource = create_signer_with_capability(&shovelMinter.cap);
-        let sender = signer::address_of(sign);
+        let resource = create_signer_with_capability(cap);
 
         let amount = 1;
-        let token_id = token::mint_token(&resource, shovelMinter.token_data_id, amount); // TODO random shovel bundle
-
-        token::initialize_token_store(sign);
-        token::opt_in_direct_transfer(sign, true);
-        token::transfer(&resource, token_id, sender, amount);
+        let token_id = token::mint_token(&resource, shovelMinter.token_data_id, amount);
+        token_id
     }
 }

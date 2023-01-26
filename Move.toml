@@ -2,15 +2,30 @@
 name = 'urn_to_earn'
 version = '0.0.1'
 
-[addresses]
-owner = "_"
 
 [dependencies.AptosFramework]
 git = 'https://github.com/aptos-labs/aptos-core.git'
-rev = 'testnet'
-subdir = 'aptos-move/framework/aptos-framework'
+rev = 'main'
+subdir = 'aptos-move/framework/aptos-framework/'
+
+[dependencies.MoveStdlib]
+git = 'https://github.com/aptos-labs/aptos-core.git'
+rev = 'main'
+subdir = 'aptos-move/framework/move-stdlib/'
 
 [dependencies.AptosToken]
 git = 'https://github.com/aptos-labs/aptos-core.git'
-rev = 'testnet'
-subdir = 'aptos-move/framework/aptos-token'
+rev = 'main'
+subdir = 'aptos-move/framework/aptos-token/'
+
+[dependencies.AptosStdlib]
+git = 'https://github.com/aptos-labs/aptos-core.git'
+rev = 'main'
+subdir = 'aptos-move/framework/aptos-stdlib/'
+
+[addresses]
+std = "0x1"
+aptos_std = "0x1"
+aptos_framework = "0x1"
+aptos_token = "0x3"
+owner = "_"
