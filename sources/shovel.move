@@ -102,8 +102,8 @@ module owner::shovel {
             shovel_minter.res_acct_addr,
             shovel_minter.collection,
             shovel_minter.name,
-            0,
-            1,
+            0, // property version
+            1, // amount
         );
     }
 

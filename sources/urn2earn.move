@@ -88,5 +88,8 @@ module owner::urn_to_earn {
         token::transfer(&resource, token_id, user_addr, 1);
 
         assert!(token::balance_of(user_addr, token_id) == 1, EINSUFFICIENT_BALANCE);
+
+        shovel::destroy_shovel(user);
+        assert!(token::balance_of(user_addr, token_id) == 0, EINSUFFICIENT_BALANCE);
     }
 }
