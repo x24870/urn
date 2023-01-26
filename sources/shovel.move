@@ -107,12 +107,12 @@ module owner::shovel {
         );
     }
 
-    public(friend) fun mint(_sign: &signer, cap: &account::SignerCapability): token::TokenId acquires ShovelMinter {
+    public(friend) fun mint(_sign: &signer, resource: &signer): token::TokenId acquires ShovelMinter {
         let shovelMinter = borrow_global_mut<ShovelMinter>(@owner);
-        let resource = create_signer_with_capability(cap);
+        // let resource = create_signer_with_capability(cap);
 
         let amount = 1;
-        let token_id = token::mint_token(&resource, shovelMinter.token_data_id, amount);
+        let token_id = token::mint_token(resource, shovelMinter.token_data_id, amount);
         token_id
     }
 }
