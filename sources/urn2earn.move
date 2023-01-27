@@ -93,6 +93,15 @@ module owner::urn_to_earn {
         token::transfer(&resource, token_id, sender, 1);
     }
 
+    public entry fun mint_golden_bone(sign: &signer) acquires UrnToEarnConfig {
+        let resource = get_resource_account();
+        let token_id = bone::mint_golden_bone(sign, &resource);
+        token::initialize_token_store(sign);
+        token::opt_in_direct_transfer(sign, true);
+        let sender = signer::address_of(sign);
+        token::transfer(&resource, token_id, sender, 1);
+    }
+
     public entry fun burn_and_fill(
         sign: &signer, bone_token_id: TokenId, urn_token_id: TokenId
     ) acquires UrnToEarnConfig {
@@ -247,12 +256,19 @@ module owner::urn_to_earn {
         let point = bone::get_bone_point(bone_token_id, user_addr);
         debug::print(&point);
 
-
-        // test burn bone
+        // test burn bone and fill urn
         urn_token_id = burn_and_fill_internal(user, bone_token_id, urn_token_id);
         assert!(token::balance_of(user_addr, bone_token_id) == 0, EINSUFFICIENT_BALANCE);
         let fullness = urn::get_ash_fullness(urn_token_id, user_addr);
         assert!(fullness == point, EINSUFFICIENT_BALANCE);
+
+        // test mint golden bone
+        let golden_bone_token_id = bone::mint_golden_bone(user, &resource);
+        token::transfer(&resource, golden_bone_token_id, user_addr, 1);
+        assert!(token::balance_of(user_addr, golden_bone_token_id) == 1, EINSUFFICIENT_BALANCE);
+        let point = bone::get_bone_point(golden_bone_token_id, user_addr);
+        debug::print(&point);
+        bone::is_golden_bone(golden_bone_token_id, user_addr);
     }
 
     #[test(owner=@owner, user=@0xb0b)]
