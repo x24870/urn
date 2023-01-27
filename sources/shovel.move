@@ -1,13 +1,8 @@
 module owner::shovel {
-    use aptos_framework::account::{Self, create_signer_with_capability};
-    // use aptos_std::table;
     use std::signer;
     use std::string::{Self, String};
-    // use std::vector;
     use std::bcs;
     use aptos_token::token::{Self};
-    // use owner::urn_utils;
-    // use aptos_framework::event::{Self};
 
     const MAX_U64: u64 = 18446744073709551615;
     const BURNABLE_BY_OWNER: vector<u8> = b"TOKEN_BURNABLE_BY_OWNER";
@@ -28,19 +23,17 @@ module owner::shovel {
     const TOKEN_NAME: vector<u8> = b"SHOVEL";
     const TOKEN_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmSioUrHchtStNHXCHSzS8M6HVHDV8dPojgwF4EqpFBtf5/shovel.jpg";
 
-    public(friend) fun init_shovel(sender: &signer, collection_name: String, cap: &account::SignerCapability) {
+    public(friend) fun init_shovel(sender: &signer, resource: &signer, collection_name: String) {
         // Don't run setup more than once
         if (exists<ShovelMinter>(signer::address_of(sender))) {
             return
         };
 
-        let resource = create_signer_with_capability(cap);
-
         // create shovel token data
-        let token_data_id = create_shovel_token_data(&resource, collection_name);
+        let token_data_id = create_shovel_token_data(resource, collection_name);
 
         move_to(sender, ShovelMinter {
-            res_acct_addr: signer::address_of(&resource),
+            res_acct_addr: signer::address_of(resource),
             token_data_id: token_data_id,
             collection: collection_name,
             name: string::utf8(TOKEN_NAME),

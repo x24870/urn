@@ -1,5 +1,5 @@
 module owner::urn {
-    use aptos_framework::account::{Self, create_signer_with_capability};
+    use aptos_framework::account::{Self};
     use std::signer;
     use std::string::{Self, String};
     use aptos_token::token::{Self, TokenId};
@@ -32,23 +32,23 @@ module owner::urn {
     const TOKEN_NAME: vector<u8> = b"URN";
     const TOKEN_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmSioUrHchtStNHXCHSzS8M6HVHDV8dPojgwF4EqpFBtf5/urn.jpg";
 
-    public(friend) fun init_urn(sender: &signer, collection_name: String, cap: &account::SignerCapability) {
+    public(friend) fun init_urn(
+        sender: &signer, resource: &signer, collection_name: String
+    ) {
         // Don't run setup more than once
         if (exists<UrnMinter>(signer::address_of(sender))) {
             return
         };
 
-        let resource = create_signer_with_capability(cap);
-
         // create urn token data
-        let token_data_id = create_urn_token_data(&resource, collection_name);
+        let token_data_id = create_urn_token_data(resource, collection_name);
 
         move_to(sender, UrnMinter {
-            res_acct_addr: signer::address_of(&resource),
+            res_acct_addr: signer::address_of(resource),
             token_data_id: token_data_id,
             collection: collection_name,
             name: string::utf8(TOKEN_NAME),
-            mint_event: account::new_event_handle<MintEvent>(&resource),
+            mint_event: account::new_event_handle<MintEvent>(resource),
         });
     }
 
@@ -63,10 +63,6 @@ module owner::urn {
         let royalty_points_numerator: u64 = 5;
         let token_mutate_config = token::create_token_mutability_config(
             &vector<bool>[ true, true, true, true, true ]); // max, uri, royalty, description, property
-        // let property_keys = vector<String>[string::utf8(BURNABLE_BY_OWNER)];
-        // let property_values = vector<vector<u8>>[bcs::to_bytes<bool>(&true)];
-        // let property_types = vector<String>[string::utf8(b"bool")];
-
         let default_keys = vector<String>[
             string::utf8(b"MATERIAL"), string::utf8(b"ASH"), string::utf8(BURNABLE_BY_OWNER)
         ];

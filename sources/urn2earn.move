@@ -9,7 +9,7 @@ module owner::urn_to_earn {
     // use aptos_token::property_map::{Self};
     use owner::shovel;
     use owner::urn;
-    // use owner::bone;
+    use owner::bone;
 
     struct UrnToEarnConfig has key {
         description: String,
@@ -47,8 +47,9 @@ module owner::urn_to_earn {
         token::create_collection(&resource, name, description, uri, maximum, mutate_setting);
 
         // setup NFTs
-        shovel::init_shovel(sender, name, &signer_cap);
-        urn::init_urn(sender, name, &signer_cap);
+        shovel::init_shovel(sender, &resource, name);
+        urn::init_urn(sender, &resource, name);
+        bone::init_bone(sender, &resource, name);
 
         move_to(sender, UrnToEarnConfig {
             description: description,
@@ -84,6 +85,31 @@ module owner::urn_to_earn {
         token::transfer(&resource, token_id, sender, 1);
     }
 
+    public entry fun mint_bone(sign: &signer) acquires UrnToEarnConfig {
+        let resource = get_resource_account();
+        let token_id = bone::mint(sign, &resource);
+        token::initialize_token_store(sign);
+        token::opt_in_direct_transfer(sign, true);
+        let sender = signer::address_of(sign);
+        token::transfer(&resource, token_id, sender, 1);
+    }
+
+    // public entry fun burn_and_fill(sign: &signer) acquires UrnToEarnConfig {
+    // //         public entry fun burn(
+    // //     owner: &signer,
+    // //     creators_address: address,
+    // //     collection: String,
+    // //     name: String,
+    // //     property_version: u64,
+    // //     amount: u64
+    // // )
+    // }
+ 
+
+    #[test_only]
+    use owner::pseudorandom;
+     #[test_only]
+    use aptos_framework::genesis;
 
     #[test_only]
     fun init_for_test(
@@ -96,10 +122,17 @@ module owner::urn_to_earn {
 
         init_module(owner);
         assert!(exists<UrnToEarnConfig>(owner_addr), 0);
+
+        // init pseudorandom pre-requirements 
+        genesis::setup();
+        pseudorandom::init_for_test(owner);
+
     }
 
     #[test(owner=@owner, user=@0xb0b)]
-    public fun test_shovel(owner: &signer, user: &signer) acquires UrnToEarnConfig {
+    public fun test_shovel(
+        owner: &signer, user: &signer
+    ) acquires UrnToEarnConfig {
         init_for_test(owner, user);
         let user_addr = signer::address_of(user);
         // test mint shovel
@@ -117,7 +150,9 @@ module owner::urn_to_earn {
     }
 
     #[test(owner=@owner, user=@0xb0b)]
-    public fun test_urn(owner: &signer, user: &signer) acquires UrnToEarnConfig {
+    public fun test_urn(
+        owner: &signer, user: &signer
+    ) acquires UrnToEarnConfig {
         init_for_test(owner, user);
         let user_addr = signer::address_of(user);
         // test mint urn
@@ -145,5 +180,41 @@ module owner::urn_to_earn {
         // make sure urn material still exists
         let material = urn::get_urn_material(token_id, user_addr);
         assert!(material == string::utf8(b"ceramic"), EINSUFFICIENT_BALANCE);
+    }
+
+    #[test(owner=@owner, user=@0xb0b)]
+    public fun test_bone(
+        owner: &signer, user: &signer
+    ) acquires UrnToEarnConfig {
+        init_for_test(owner, user);
+        let user_addr = signer::address_of(user);
+
+        // prepare
+        token::initialize_token_store(user);
+        token::opt_in_direct_transfer(user, true);
+        let resource = get_resource_account();
+
+        // test mint urn
+        let urn_token_id = urn::mint(user, &resource);
+        token::transfer(&resource, urn_token_id, user_addr, 1);
+
+        // test mint bone
+        let bone_token_id = bone::mint(user, &resource);
+        token::transfer(&resource, bone_token_id, user_addr, 1);
+        let point = bone::get_bone_point(bone_token_id, user_addr);
+        assert!(point == 0, 0);
+
+        // test fill
+        let fullness = urn::get_ash_fullness(urn_token_id, user_addr);
+        assert!(fullness == 0, EINSUFFICIENT_BALANCE);
+
+        urn_token_id = urn::fill(user, &resource, urn_token_id, 5);
+        fullness = urn::get_ash_fullness(urn_token_id, user_addr);
+        assert!(fullness == 5, EINSUFFICIENT_BALANCE);
+
+        urn_token_id = urn::fill(user, &resource, urn_token_id, 5);
+        fullness = urn::get_ash_fullness(urn_token_id, user_addr);
+        assert!(fullness == 10, EINSUFFICIENT_BALANCE);
+
     }
 }
