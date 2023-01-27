@@ -26,6 +26,16 @@ module owner::bcd {
         return value
     }
 
+    public fun bytes_to_u8(bytes: vector<u8>): u8 {
+        let value = 0u8;
+        let i = 0u64;
+        while (i < 1) {
+            value = value | ((*vector::borrow(&bytes, i) as u8) << ((8 * (0 - i)) as u8));
+            i = i + 1;
+        };
+        return value
+    }
+
     #[test]
     fun test_bytes_to_u64() {
         // binary: 01010001 11010011 10101111 11001100 11111101 00001001 10001110 11001101

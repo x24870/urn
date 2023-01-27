@@ -5,7 +5,7 @@ module owner::bone {
     use aptos_token::token::{Self, TokenId};
     use aptos_framework::event::{Self, EventHandle};
     use std::bcs;
-    use owner::pseudorandom;
+    use owner::pseudorandom::{rand_u8_range};
     use aptos_token::property_map::{Self};
 
     const MAX_U64: u64 = 18446744073709551615;
@@ -147,13 +147,27 @@ module owner::bone {
             }
         );
 
+        // rand point
+        let point = rand_u8_range(&signer_addr, 0, 100);
+        let keys = vector<String>[string::utf8(b"POINT")];
+        let vals = vector<vector<u8>>[bcs::to_bytes<u8>(&point)];
+        let types = vector<String>[string::utf8(b"u8")];
+        
+        token_id = token::mutate_one_token(
+            resource, 
+            signer::address_of(resource), // token haven't transfered
+            token_id,
+            keys,
+            vals,
+            types
+        );
+
         token_id
     }
 
-    fun rand_bone(_addr: &address, bm: &mut BoneMinter): token::TokenDataId {
+    fun rand_bone(addr: &address, bm: &mut BoneMinter): token::TokenDataId {
         // TODO adjust rate of each part
-        // TODO let r = pseudorandom::rand_u64_range(addr, 0, 100);
-        let r = pseudorandom::rand_u64_range_no_sender(0, 100);
+        let r = rand_u8_range(addr, 0, 100);
         if (r < 20) {
             return bm.arm_token_data_id
         } else if (r < 40) {
@@ -172,6 +186,28 @@ module owner::bone {
         assert!(balance != 0, ENOT_OWN_THIS_TOKEN);
         let properties = token::get_property_map(token_owner, token_id);
         let point = property_map::read_u8(&properties, &string::utf8(b"POINT"));
+        point
+    }
+
+    public(friend) fun burn_bone(
+        sign: &signer, token_id: TokenId
+    ): u8 {
+        let point = get_bone_point(token_id, signer::address_of(sign));
+        let (
+            creator_addr, 
+            collection, 
+            name, 
+            prop_ver
+            ) = token::get_token_id_fields(&token_id);
+
+        token::burn(
+            sign,
+            creator_addr,
+            collection,
+            name,
+            prop_ver,
+            1,
+        );
         point
     }
 }
