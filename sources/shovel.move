@@ -76,20 +76,7 @@ module owner::shovel {
 
 
     public fun destroy_shovel(sender: &signer) acquires ShovelMinter {
-        // let token_data_id = shovel::get_token_data_id();
-        // let resource = get_resource_signer();
         let shovel_minter = borrow_global<ShovelMinter>(@owner);
-        // let sender_addr = signer::address_of(sender);
-        // burn 1 shovel
-        // token::burn_by_creator(
-        //     &resource,
-        //     sender_addr,
-        //     shovel_minter.collection,
-        //     shovel_minter.name,
-        //     0, //property version
-        //     1 , //amount
-        //     );
-
         token::burn(
             sender,
             shovel_minter.res_acct_addr,

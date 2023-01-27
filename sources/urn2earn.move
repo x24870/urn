@@ -100,7 +100,7 @@ module owner::urn_to_earn {
         burn_and_fill_internal(sign, bone_token_id, urn_token_id);
     }
 
-    public fun burn_and_fill_internal(
+    fun burn_and_fill_internal(
         sign: &signer, bone_token_id: TokenId, urn_token_id: TokenId
     ): TokenId acquires UrnToEarnConfig {
         let point = bone::burn_bone(sign, bone_token_id);
@@ -108,17 +108,26 @@ module owner::urn_to_earn {
         urn::fill(sign, &resource, urn_token_id, point)
     }
 
-    // public entry fun burn_and_fill(sign: &signer) acquires UrnToEarnConfig {
-    // //         public entry fun burn(
-    // //     owner: &signer,
-    // //     creators_address: address,
-    // //     collection: String,
-    // //     name: String,
-    // //     property_version: u64,
-    // //     amount: u64
-    // // )
-    // }
- 
+    public entry fun dig(
+        sign: &signer
+    ) acquires UrnToEarnConfig {
+        dig_internal(sign);
+    }
+
+    fun dig_internal(
+        sign: &signer
+    ): TokenId acquires UrnToEarnConfig {
+        shovel::destroy_shovel(sign);
+        let resource = get_resource_account();
+        let bone_token_id = bone::mint(sign, &resource);
+        token::initialize_token_store(sign);
+        token::opt_in_direct_transfer(sign, true);
+        token::transfer(
+            &resource, bone_token_id, signer::address_of(sign), 1
+            );
+
+        bone_token_id
+    }
 
     #[test_only]
     use owner::pseudorandom;
@@ -161,8 +170,9 @@ module owner::urn_to_earn {
 
         assert!(token::balance_of(user_addr, token_id) == 1, EINSUFFICIENT_BALANCE);
 
-        shovel::destroy_shovel(user);
+        let bone_token_id = dig_internal(user);
         assert!(token::balance_of(user_addr, token_id) == 0, EINSUFFICIENT_BALANCE);
+        assert!(token::balance_of(user_addr, bone_token_id) == 1, EINSUFFICIENT_BALANCE);
     }
 
     #[test(owner=@owner, user=@0xb0b)]
@@ -228,14 +238,5 @@ module owner::urn_to_earn {
         assert!(token::balance_of(user_addr, bone_token_id) == 0, EINSUFFICIENT_BALANCE);
         let fullness = urn::get_ash_fullness(urn_token_id, user_addr);
         assert!(fullness == point, EINSUFFICIENT_BALANCE);
-
-        // urn_token_id = urn::fill(user, &resource, urn_token_id, 5);
-        // fullness = urn::get_ash_fullness(urn_token_id, user_addr);
-        // assert!(fullness == 5, EINSUFFICIENT_BALANCE);
-
-        // urn_token_id = urn::fill(user, &resource, urn_token_id, 5);
-        // fullness = urn::get_ash_fullness(urn_token_id, user_addr);
-        // assert!(fullness == 10, EINSUFFICIENT_BALANCE);
-
     }
 }
