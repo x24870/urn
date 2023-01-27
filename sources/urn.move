@@ -109,6 +109,34 @@ module owner::urn {
         token_id
     }
 
+    public(friend) fun mint_golden_urn(sign: &signer, resource: &signer):TokenId acquires UrnMinter {
+        let urnMinter = borrow_global_mut<UrnMinter>(@owner);
+        let token_id = token::mint_token(resource, urnMinter.token_data_id, 1);
+        
+        // emit mint urn event
+        event::emit_event<MintEvent>(
+            &mut urnMinter.mint_event,
+            MintEvent {
+                minter: signer::address_of(sign),
+            }
+        );
+
+        let keys = vector<String>[string::utf8(b"MATERIAL")];
+        let vals = vector<vector<u8>>[bcs::to_bytes<string::String>(&string::utf8(b"gold"))];
+        let types = vector<String>[string::utf8(b"0x1::string::String")];
+        
+        token_id = token::mutate_one_token(
+            resource, 
+            signer::address_of(resource), // token haven't transfered
+            token_id,
+            keys,
+            vals,
+            types
+        );
+
+        token_id
+    }
+
     public fun get_ash_fullness(token_id: TokenId, token_owner: address): u8 {
         let balance = token::balance_of(token_owner, token_id);
         assert!(balance != 0, ENOT_OWN_THIS_TOKEN);

@@ -4,12 +4,10 @@ module owner::urn_to_earn {
     use std::vector;
     use std::string::{Self, String};
     use aptos_token::token::{Self, TokenId};
-    // use std::bcs;
-    // use aptos_framework::event::{Self, EventHandle};
-    // use aptos_token::property_map::{Self};
     use owner::shovel;
     use owner::urn;
     use owner::bone;
+    use owner::shard;
 
     struct UrnToEarnConfig has key {
         description: String,
@@ -50,6 +48,7 @@ module owner::urn_to_earn {
         shovel::init_shovel(sender, &resource, name);
         urn::init_urn(sender, &resource, name);
         bone::init_bone(sender, &resource, name);
+        shard::init_shard(sender, &resource, name);
 
         move_to(sender, UrnToEarnConfig {
             description: description,
@@ -127,6 +126,22 @@ module owner::urn_to_earn {
             );
 
         bone_token_id
+    }
+
+    public entry fun forge(sign: &signer) acquires UrnToEarnConfig {
+        forge_internal(sign);
+    }
+
+    fun forge_internal(sign: &signer): TokenId acquires UrnToEarnConfig {
+        shard::destroy_ten_shards(sign);
+
+        let resource = get_resource_account();
+        let token_id = urn::mint_golden_urn(sign, &resource);
+        token::initialize_token_store(sign);
+        token::opt_in_direct_transfer(sign, true);
+        let sender = signer::address_of(sign);
+        token::transfer(&resource, token_id, sender, 1);
+        token_id
     }
 
     #[test_only]
@@ -238,5 +253,35 @@ module owner::urn_to_earn {
         assert!(token::balance_of(user_addr, bone_token_id) == 0, EINSUFFICIENT_BALANCE);
         let fullness = urn::get_ash_fullness(urn_token_id, user_addr);
         assert!(fullness == point, EINSUFFICIENT_BALANCE);
+    }
+
+    #[test(owner=@owner, user=@0xb0b)]
+    public fun test_shard(
+        owner: &signer, user: &signer
+    ) acquires UrnToEarnConfig {
+        init_for_test(owner, user);
+        let user_addr = signer::address_of(user);
+        let resource = get_resource_account();
+        // enable opt in
+        token::initialize_token_store(user);
+        token::opt_in_direct_transfer(user, true);
+        // test mint shard
+        let token_id = shard::mint(user, &resource); // 1
+        shard::mint(user, &resource); // 2
+        shard::mint(user, &resource); // 3
+        shard::mint(user, &resource); // 4
+        shard::mint(user, &resource); // 5
+        shard::mint(user, &resource); // 6
+        shard::mint(user, &resource); // 7
+        shard::mint(user, &resource); // 8
+        shard::mint(user, &resource); // 9
+        shard::mint(user, &resource); // 10
+        token::transfer(&resource, token_id, user_addr, 10);
+
+        assert!(token::balance_of(user_addr, token_id) == 10, EINSUFFICIENT_BALANCE);
+
+        let golden_urn_token_id = forge_internal(user);
+        assert!(token::balance_of(user_addr, token_id) == 0, EINSUFFICIENT_BALANCE);
+        assert!(token::balance_of(user_addr, golden_urn_token_id) == 1, EINSUFFICIENT_BALANCE);
     }
 }
