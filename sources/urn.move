@@ -1,5 +1,6 @@
 module owner::urn {
     use aptos_framework::account::{Self};
+    use aptos_std::simple_map::{Self, SimpleMap, borrow, borrow_mut, contains_key, add};
     use std::signer;
     use std::string::{Self, String};
     use aptos_token::token::{Self, TokenId};
@@ -16,12 +17,24 @@ module owner::urn {
         minter: address,
     }
 
+    struct BurnEvent has store, drop {
+        burner: address,
+    }
+
+    struct BurnGoldenUrnEvent has store, drop {
+        burner: address,
+    }
+
     struct UrnMinter has store, key {
         res_acct_addr: address,
         urn_token_data_id: token::TokenDataId,
         golden_urn_token_data_id: token::TokenDataId,
         collection: string::String,
         mint_event: EventHandle<MintEvent>,
+        burn_event: EventHandle<BurnEvent>,
+        burn_golden_urn_event: EventHandle<BurnGoldenUrnEvent>,
+        urn_burned: SimpleMap<address, u8>,
+        golden_urn_burned: SimpleMap<address, u8>,
     }
 
     const ENOT_AUTHORIZED: u64 = 1;
@@ -29,6 +42,8 @@ module owner::urn {
     const EMINTING_NOT_ENABLED: u64 = 3;
     const ENOT_OWN_THIS_TOKEN: u64 = 4;
     const ETOKEN_PROP_MISMATCH: u64 = 5;
+    const EURN_OVERFLOW: u64 = 6;
+    const EURN_NOT_FULL: u64 = 7;
 
     const URN_TOKEN_NAME: vector<u8> = b"urn";
     const GOLDEN_URN_TOKEN_NAME: vector<u8> = b"golden_urn";
@@ -64,6 +79,10 @@ module owner::urn {
             golden_urn_token_data_id: golden_urn_token_data_id,
             collection: collection_name,
             mint_event: account::new_event_handle<MintEvent>(resource),
+            burn_event: account::new_event_handle<BurnEvent>(resource),
+            burn_golden_urn_event: account::new_event_handle<BurnGoldenUrnEvent>(resource),
+            urn_burned: simple_map::create<address, u8>(),
+            golden_urn_burned: simple_map::create<address, u8>(),
         });
     }
 
@@ -149,7 +168,7 @@ module owner::urn {
         fullness
     }
 
-    public fun get_urn_type(token_id: TokenId, _token_owner: address): String {
+    public fun get_urn_type(token_id: TokenId): String {
         let (
             _creator_addr, 
             _collection, 
@@ -165,6 +184,7 @@ module owner::urn {
         let token_owner = signer::address_of(sign);
         let fillness = get_ash_fullness(token_id, token_owner);
         fillness = fillness + amount;
+        assert!(fillness <= 100, EURN_OVERFLOW);
 
         let keys = vector<String>[string::utf8(b"ASH")];
         let vals = vector<vector<u8>>[bcs::to_bytes<u8>(&fillness)];
@@ -180,12 +200,73 @@ module owner::urn {
         )
     }
 
+    public(friend) fun burn_urn(
+        sign: &signer, token_id: TokenId
+    ) acquires UrnMinter {
+        let sign_addr = signer::address_of(sign);
+        // check the user owns the urn
+        let balance = token::balance_of(sign_addr, token_id);
+        assert!(balance != 0, ENOT_OWN_THIS_TOKEN);
+
+        // check the is full
+        let fullness = get_ash_fullness(token_id, sign_addr);
+        assert!(fullness == 100, EURN_NOT_FULL);
+        let (
+            creator_addr, 
+            collection, 
+            name, 
+            prop_ver
+            ) = token::get_token_id_fields(&token_id);
+
+        token::burn(
+            sign,
+            creator_addr,
+            collection,
+            name,
+            prop_ver,
+            1,
+        );
+
+        let urnMinter = borrow_global_mut<UrnMinter>(@owner);
+
+        // emit event and record to map
+        if (is_golden_urn(token_id)) {
+            event::emit_event<BurnGoldenUrnEvent>(
+                &mut urnMinter.burn_golden_urn_event,
+                BurnGoldenUrnEvent {
+                    burner: sign_addr,
+                }
+            );
+            if (contains_key<address, u8>(
+                &urnMinter.golden_urn_burned, &sign_addr)) {
+                    let v = *borrow(&urnMinter.golden_urn_burned, &sign_addr);
+                    *borrow_mut(&mut urnMinter.golden_urn_burned, &sign_addr) = v + 1;
+                } else {
+                    add<address, u8>(&mut urnMinter.golden_urn_burned, sign_addr, 1);
+                }
+        } else {
+            event::emit_event<BurnEvent>(
+                &mut urnMinter.burn_event,
+                BurnEvent {
+                    burner: sign_addr,
+                }
+            );
+            if (contains_key<address, u8>(
+                &urnMinter.urn_burned, &sign_addr)) {
+                    let v = *borrow(&urnMinter.urn_burned, &sign_addr);
+                    *borrow_mut(&mut urnMinter.urn_burned, &sign_addr) = v + 1;
+                } else {
+                    add<address, u8>(&mut urnMinter.urn_burned, sign_addr, 1);
+                }
+        }
+    }
+
     public fun is_full(token_id: TokenId, token_owner: address) {
         assert!(get_ash_fullness(token_id, token_owner) == 100, ETOKEN_PROP_MISMATCH);
     }
 
-    public fun is_golden_urn(token_id: TokenId, token_owner: address): bool {
-        get_urn_type(token_id, token_owner) == string::utf8(GOLDEN_URN_TOKEN_NAME)
+    public fun is_golden_urn(token_id: TokenId): bool {
+        get_urn_type(token_id) == string::utf8(GOLDEN_URN_TOKEN_NAME)
     }
 
 }

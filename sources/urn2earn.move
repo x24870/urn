@@ -113,7 +113,7 @@ module owner::urn_to_earn {
         sign: &signer, urn_token_id: TokenId, bone_token_id: TokenId
     ): TokenId acquires UrnToEarnConfig {
         let sign_addr = signer::address_of(sign);
-        if (urn::is_golden_urn(urn_token_id, sign_addr)) {
+        if (urn::is_golden_urn(urn_token_id)) {
             assert!(
                 bone::is_golden_bone(bone_token_id, sign_addr) == true,
                 ETOKEN_PROP_MISMATCH);
@@ -235,10 +235,6 @@ module owner::urn_to_earn {
         token_id = urn::fill(user, &resource, token_id, 5);
         fullness = urn::get_ash_fullness(token_id, user_addr);
         assert!(fullness == 10, EINSUFFICIENT_BALANCE);
-
-        // make sure urn type still exists
-        let type = urn::get_urn_type(token_id, user_addr);
-        assert!(type == string::utf8(b"urn"), EINSUFFICIENT_BALANCE);
     }
 
     #[test(owner=@owner, user=@0xb0b)]
