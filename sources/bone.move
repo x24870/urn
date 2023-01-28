@@ -318,4 +318,28 @@ module owner::bone {
         );
         point
     }
+
+    #[test_only]
+    public(friend) fun mint_50point_skull(
+        _sign: &signer, resource: &signer
+    ): TokenId acquires BoneMinter {
+        let boneMinter = borrow_global_mut<BoneMinter>(@owner);
+        let token_id = token::mint_token(resource, boneMinter.skull_token_data_id, 1);
+    
+        // rand point
+        let keys = vector<String>[string::utf8(b"POINT")];
+        let vals = vector<vector<u8>>[bcs::to_bytes<u8>(&50)];
+        let types = vector<String>[string::utf8(b"u8")];
+        
+        token_id = token::mutate_one_token(
+            resource, 
+            signer::address_of(resource), // token haven't transfered
+            token_id,
+            keys,
+            vals,
+            types
+        );
+
+        token_id
+    }
 }

@@ -164,6 +164,10 @@ module owner::urn_to_earn {
         token_id
     }
 
+    public fun reincarnate(sign: &signer, urn_token_id: TokenId) {
+        urn::burn_urn(sign, urn_token_id);
+    }
+
     #[test_only]
     use owner::pseudorandom;
      #[test_only]
@@ -226,15 +230,15 @@ module owner::urn_to_earn {
 
         // test fill
         let fullness = urn::get_ash_fullness(token_id, user_addr);
-        assert!(fullness == 0, EINSUFFICIENT_BALANCE);
+        assert!(fullness == 0, ETOKEN_PROP_MISMATCH);
 
         token_id = urn::fill(user, &resource, token_id, 5);
         fullness = urn::get_ash_fullness(token_id, user_addr);
-        assert!(fullness == 5, EINSUFFICIENT_BALANCE);
+        assert!(fullness == 5, ETOKEN_PROP_MISMATCH);
 
         token_id = urn::fill(user, &resource, token_id, 5);
         fullness = urn::get_ash_fullness(token_id, user_addr);
-        assert!(fullness == 10, EINSUFFICIENT_BALANCE);
+        assert!(fullness == 10, ETOKEN_PROP_MISMATCH);
     }
 
     #[test(owner=@owner, user=@0xb0b)]
@@ -355,5 +359,88 @@ module owner::urn_to_earn {
         bone::is_golden_bone(bone_token_id, user_addr);
 
         _ = burn_and_fill_internal(user, golden_urn_token_id, bone_token_id);
+    }
+
+    #[test(owner=@owner, user=@0xb0b)]
+    #[expected_failure(abort_code = urn::EURN_OVERFLOW)]
+    public fun test_urn_overflow(
+        owner: &signer, user: &signer
+    ) acquires UrnToEarnConfig {
+        init_for_test(owner, user);
+        let user_addr = signer::address_of(user);
+        let resource = get_resource_account();
+        
+        // mint urn 
+        let urn_token_id = urn::mint(user, &resource);
+        token::transfer(&resource, urn_token_id, user_addr, 1);
+
+        // mint test skulls
+        let bone_token_id_1 = bone::mint_50point_skull(user, &resource);
+        token::transfer(&resource, bone_token_id_1, user_addr, 1);
+        let bone_token_id_2 = bone::mint_50point_skull(user, &resource);
+        token::transfer(&resource, bone_token_id_2, user_addr, 1);
+        let bone_token_id_3 = bone::mint_50point_skull(user, &resource);
+        token::transfer(&resource, bone_token_id_3, user_addr, 1);
+
+        urn_token_id = burn_and_fill_internal(user, urn_token_id, bone_token_id_1);
+        assert!(urn::get_ash_fullness(urn_token_id, user_addr) == 50, ETOKEN_PROP_MISMATCH);
+        burn_and_fill_internal(user, urn_token_id, bone_token_id_2);
+        assert!(urn::get_ash_fullness(urn_token_id, user_addr) == 100, ETOKEN_PROP_MISMATCH);
+        burn_and_fill_internal(user, urn_token_id, bone_token_id_3);
+    }
+
+    #[test(owner=@owner, user=@0xb0b)]
+    #[expected_failure(abort_code = urn::EURN_NOT_FULL)]
+    public fun test_urn_not_full(
+        owner: &signer, user: &signer
+    ) acquires UrnToEarnConfig {
+        init_for_test(owner, user);
+        let user_addr = signer::address_of(user);
+        let resource = get_resource_account();
+        
+        // mint urn 
+        let urn_token_id = urn::mint(user, &resource);
+        token::transfer(&resource, urn_token_id, user_addr, 1);
+
+        // mint test skulls
+        let bone_token_id_1 = bone::mint_50point_skull(user, &resource);
+        token::transfer(&resource, bone_token_id_1, user_addr, 1);
+
+        urn_token_id = burn_and_fill_internal(user, urn_token_id, bone_token_id_1);
+        assert!(urn::get_ash_fullness(urn_token_id, user_addr) == 50, ETOKEN_PROP_MISMATCH);
+
+        reincarnate(user, urn_token_id);
+    }
+
+    #[test(owner=@owner, user=@0xb0b)]
+    public fun test_reincarnate(
+        owner: &signer, user: &signer
+    ) acquires UrnToEarnConfig {
+        init_for_test(owner, user);
+        let user_addr = signer::address_of(user);
+        let resource = get_resource_account();
+        
+        // mint urn 
+        let urn_token_id = urn::mint(user, &resource);
+        token::transfer(&resource, urn_token_id, user_addr, 1);
+
+        // mint test skulls
+        let bone_token_id_1 = bone::mint_50point_skull(user, &resource);
+        token::transfer(&resource, bone_token_id_1, user_addr, 1);
+        let bone_token_id_2 = bone::mint_50point_skull(user, &resource);
+        token::transfer(&resource, bone_token_id_2, user_addr, 1);
+
+        urn_token_id = burn_and_fill_internal(user, urn_token_id, bone_token_id_1);
+        assert!(urn::get_ash_fullness(urn_token_id, user_addr) == 50, ETOKEN_PROP_MISMATCH);
+        assert!(token::balance_of(user_addr, bone_token_id_1) == 0, EINSUFFICIENT_BALANCE);
+        urn_token_id = burn_and_fill_internal(user, urn_token_id, bone_token_id_2);
+        assert!(urn::get_ash_fullness(urn_token_id, user_addr) == 100, ETOKEN_PROP_MISMATCH);
+        assert!(token::balance_of(user_addr, bone_token_id_2) == 0, EINSUFFICIENT_BALANCE);
+
+        reincarnate(user, urn_token_id);
+        assert!(token::balance_of(user_addr, urn_token_id) == 0, EINSUFFICIENT_BALANCE);
+
+        // TODO: check if urn_burned map is updates
+        // TODO: test reincarnate multiple times
     }
 }
