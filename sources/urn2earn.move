@@ -103,14 +103,14 @@ module owner::urn_to_earn {
         token::transfer(&resource, token_id, sender, 1);
     }
 
-    public entry fun burn_and_fill(
+    public fun burn_and_fill(
         sign: &signer, bone_token_id: TokenId, urn_token_id: TokenId
     ) acquires UrnToEarnConfig {
-        burn_and_fill_internal(sign, bone_token_id, urn_token_id);
+        burn_and_fill_internal(sign, urn_token_id, bone_token_id);
     }
 
     fun burn_and_fill_internal(
-        sign: &signer, bone_token_id: TokenId, urn_token_id: TokenId
+        sign: &signer, urn_token_id: TokenId, bone_token_id: TokenId
     ): TokenId acquires UrnToEarnConfig {
         let sign_addr = signer::address_of(sign);
         if (urn::is_golden_urn(urn_token_id, sign_addr)) {
@@ -236,9 +236,9 @@ module owner::urn_to_earn {
         fullness = urn::get_ash_fullness(token_id, user_addr);
         assert!(fullness == 10, EINSUFFICIENT_BALANCE);
 
-        // make sure urn material still exists
-        let material = urn::get_urn_material(token_id, user_addr);
-        assert!(material == string::utf8(b"ceramic"), EINSUFFICIENT_BALANCE);
+        // make sure urn type still exists
+        let type = urn::get_urn_type(token_id, user_addr);
+        assert!(type == string::utf8(b"urn"), EINSUFFICIENT_BALANCE);
     }
 
     #[test(owner=@owner, user=@0xb0b)]
@@ -262,7 +262,7 @@ module owner::urn_to_earn {
         debug::print(&point);
 
         // test burn bone and fill urn
-        urn_token_id = burn_and_fill_internal(user, bone_token_id, urn_token_id);
+        urn_token_id = burn_and_fill_internal(user, urn_token_id, bone_token_id);
         assert!(token::balance_of(user_addr, bone_token_id) == 0, EINSUFFICIENT_BALANCE);
         let fullness = urn::get_ash_fullness(urn_token_id, user_addr);
         assert!(fullness == point, EINSUFFICIENT_BALANCE);
