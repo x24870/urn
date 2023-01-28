@@ -28,6 +28,7 @@ module owner::urn {
     const EHAS_ALREADY_CLAIMED_MINT: u64 = 2;
     const EMINTING_NOT_ENABLED: u64 = 3;
     const ENOT_OWN_THIS_TOKEN: u64 = 4;
+    const ETOKEN_PROP_MISMATCH: u64 = 5;
 
     const TOKEN_NAME: vector<u8> = b"URN";
     const TOKEN_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmSioUrHchtStNHXCHSzS8M6HVHDV8dPojgwF4EqpFBtf5/urn.jpg";
@@ -153,7 +154,7 @@ module owner::urn {
         material
     }
 
-    public fun fill(
+    public(friend) fun fill(
         sign: &signer, resource: &signer, token_id: TokenId, amount: u8
     ): TokenId {
         let token_owner = signer::address_of(sign);
@@ -174,29 +175,12 @@ module owner::urn {
         )
     }
 
+    public fun is_full(token_id: TokenId, token_owner: address) {
+        assert!(get_ash_fullness(token_id, token_owner) == 100, ETOKEN_PROP_MISMATCH);
+    }
 
-    // public fun is_full(sign: &signer, token_id: TokenId): bool {
-    //     let pm = token::get_property_map(
-    //         signer::address_of(sign),
-    //         token_id,
-    //     );
+    public fun is_golden_urn(token_id: TokenId, token_owner: address): bool {
+        get_urn_material(token_id, token_owner) == string::utf8(b"gold")
+    }
 
-    //     if (property_map::read_u64(&pm, &string::utf8(b"ash")) == 100) {
-    //         true
-    //     } else {
-    //         false
-    //     }
-    // }
-
-    // #[test(user = @0xa11ce, owner = @owner)]
-    // fun test_destroy_urn(
-    //     owner: &signer, user: &signer
-    //     ) acquires UrnMinter {
-    //     account::create_account_for_test(signer::address_of(user));
-    //     account::create_account_for_test(signer::address_of(owner));
-
-    //     init_module(owner);
-    //     mint(user);
-    //     destroy_urn(user);
-    // }
 }

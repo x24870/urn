@@ -253,8 +253,8 @@ module owner::bone {
         material
     }
 
-    public fun is_golden_bone(token_id: TokenId, token_owner: address) {
-        assert!(get_bone_material(token_id, token_owner) == string::utf8(b"gold"), ETOKEN_PROP_MISMATCH);
+    public fun is_golden_bone(token_id: TokenId, token_owner: address): bool {
+        get_bone_material(token_id, token_owner) == string::utf8(b"gold")
     }
 
     public(friend) fun burn_bone(

@@ -22,6 +22,7 @@ module owner::urn_to_earn {
     const EHAS_ALREADY_CLAIMED_MINT: u64 = 2;
     const EMINTING_NOT_ENABLED: u64 = 3;
     const EINSUFFICIENT_BALANCE: u64 = 4;
+    const ETOKEN_PROP_MISMATCH: u64 = 5;
 
     const MAX_U64: u64 = 18446744073709551615;
 
@@ -111,6 +112,16 @@ module owner::urn_to_earn {
     fun burn_and_fill_internal(
         sign: &signer, bone_token_id: TokenId, urn_token_id: TokenId
     ): TokenId acquires UrnToEarnConfig {
+        let sign_addr = signer::address_of(sign);
+        if (urn::is_golden_urn(urn_token_id, sign_addr)) {
+            assert!(
+                bone::is_golden_bone(bone_token_id, sign_addr) == true,
+                ETOKEN_PROP_MISMATCH);
+        } else {
+            assert!(
+                bone::is_golden_bone(bone_token_id, sign_addr) == false,
+                ETOKEN_PROP_MISMATCH);
+        };
         let point = bone::burn_bone(sign, bone_token_id);
         let resource = get_resource_account();
         urn::fill(sign, &resource, urn_token_id, point)
@@ -172,6 +183,10 @@ module owner::urn_to_earn {
         init_module(owner);
         assert!(exists<UrnToEarnConfig>(owner_addr), 0);
 
+        // enable token opt-in
+        token::initialize_token_store(user);
+        token::opt_in_direct_transfer(user, true);
+
         // init pseudorandom pre-requirements 
         genesis::setup();
         pseudorandom::init_for_test(owner);
@@ -187,9 +202,6 @@ module owner::urn_to_earn {
         // test mint shovel
         let resource = get_resource_account();
         let token_id = shovel::mint(user, &resource);
-
-        token::initialize_token_store(user);
-        token::opt_in_direct_transfer(user, true);
         token::transfer(&resource, token_id, user_addr, 1);
 
         assert!(token::balance_of(user_addr, token_id) == 1, EINSUFFICIENT_BALANCE);
@@ -208,9 +220,6 @@ module owner::urn_to_earn {
         // test mint urn
         let resource = get_resource_account();
         let token_id = urn::mint(user, &resource);
-
-        token::initialize_token_store(user);
-        token::opt_in_direct_transfer(user, true);
         token::transfer(&resource, token_id, user_addr, 1);
 
         assert!(token::balance_of(user_addr, token_id) == 1, EINSUFFICIENT_BALANCE);
@@ -238,10 +247,6 @@ module owner::urn_to_earn {
     ) acquires UrnToEarnConfig {
         init_for_test(owner, user);
         let user_addr = signer::address_of(user);
-
-        // prepare
-        token::initialize_token_store(user);
-        token::opt_in_direct_transfer(user, true);
         let resource = get_resource_account();
 
         // test mint urn
@@ -278,9 +283,6 @@ module owner::urn_to_earn {
         init_for_test(owner, user);
         let user_addr = signer::address_of(user);
         let resource = get_resource_account();
-        // enable opt in
-        token::initialize_token_store(user);
-        token::opt_in_direct_transfer(user, true);
         // test mint shard
         let token_id = shard::mint(user, &resource); // 1
         shard::mint(user, &resource); // 2
@@ -299,5 +301,63 @@ module owner::urn_to_earn {
         let golden_urn_token_id = forge_internal(user);
         assert!(token::balance_of(user_addr, token_id) == 0, EINSUFFICIENT_BALANCE);
         assert!(token::balance_of(user_addr, golden_urn_token_id) == 1, EINSUFFICIENT_BALANCE);
+    }
+
+    #[test(owner=@owner, user=@0xb0b)]
+    #[expected_failure(abort_code = ETOKEN_PROP_MISMATCH)]
+    public fun test_urn_and_golden_bone(
+        owner: &signer, user: &signer
+    ) acquires UrnToEarnConfig {
+        init_for_test(owner, user);
+        let user_addr = signer::address_of(user);
+        let resource = get_resource_account();
+
+        // test mint urn
+        let urn_token_id = urn::mint(user, &resource);
+        token::transfer(&resource, urn_token_id, user_addr, 1);
+
+        // test mint golden bone
+        let golden_bone_token_id = bone::mint_golden_bone(user, &resource);
+        token::transfer(&resource, golden_bone_token_id, user_addr, 1);
+        assert!(token::balance_of(user_addr, golden_bone_token_id) == 1, EINSUFFICIENT_BALANCE);
+        bone::is_golden_bone(golden_bone_token_id, user_addr);
+
+        _ = burn_and_fill_internal(user, urn_token_id, golden_bone_token_id);
+    }
+
+    #[test(owner=@owner, user=@0xb0b)]
+    #[expected_failure(abort_code = ETOKEN_PROP_MISMATCH)]
+    public fun test_golden_urn_and_bone(
+        owner: &signer, user: &signer
+    ) acquires UrnToEarnConfig {
+        init_for_test(owner, user);
+        let user_addr = signer::address_of(user);
+        let resource = get_resource_account();
+
+        // forge golden urn
+        let token_id = shard::mint(user, &resource); // 1
+        shard::mint(user, &resource); // 2
+        shard::mint(user, &resource); // 3
+        shard::mint(user, &resource); // 4
+        shard::mint(user, &resource); // 5
+        shard::mint(user, &resource); // 6
+        shard::mint(user, &resource); // 7
+        shard::mint(user, &resource); // 8
+        shard::mint(user, &resource); // 9
+        shard::mint(user, &resource); // 10
+        token::transfer(&resource, token_id, user_addr, 10);
+        assert!(token::balance_of(user_addr, token_id) == 10, EINSUFFICIENT_BALANCE);
+
+        let golden_urn_token_id = forge_internal(user);
+        assert!(token::balance_of(user_addr, token_id) == 0, EINSUFFICIENT_BALANCE);
+        assert!(token::balance_of(user_addr, golden_urn_token_id) == 1, EINSUFFICIENT_BALANCE);
+
+        // test mint golden bone
+        let bone_token_id = bone::mint(user, &resource);
+        token::transfer(&resource, bone_token_id, user_addr, 1);
+        assert!(token::balance_of(user_addr, bone_token_id) == 1, EINSUFFICIENT_BALANCE);
+        bone::is_golden_bone(bone_token_id, user_addr);
+
+        _ = burn_and_fill_internal(user, golden_urn_token_id, bone_token_id);
     }
 }
