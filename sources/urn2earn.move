@@ -113,6 +113,11 @@ module owner::urn_to_earn {
         sign: &signer, urn_token_id: TokenId, bone_token_id: TokenId
     ): TokenId acquires UrnToEarnConfig {
         let sign_addr = signer::address_of(sign);
+        // check user owns the token
+        assert!(token::balance_of(sign_addr, urn_token_id) == 1, EINSUFFICIENT_BALANCE);
+        assert!(token::balance_of(sign_addr, bone_token_id) == 1, EINSUFFICIENT_BALANCE);
+
+        // burn
         if (urn::is_golden_urn(urn_token_id)) {
             assert!(
                 bone::is_golden_bone(bone_token_id, sign_addr) == true,
@@ -124,6 +129,7 @@ module owner::urn_to_earn {
         };
         let point = bone::burn_bone(sign, bone_token_id);
         let resource = get_resource_account();
+
         urn::fill(sign, &resource, urn_token_id, point)
     }
 
@@ -136,6 +142,7 @@ module owner::urn_to_earn {
     fun dig_internal(
         sign: &signer
     ): TokenId acquires UrnToEarnConfig {
+        // TODO: check shovel balance > 0
         shovel::destroy_shovel(sign);
         let resource = get_resource_account();
         let bone_token_id = bone::mint(sign, &resource);
@@ -153,6 +160,7 @@ module owner::urn_to_earn {
     }
 
     fun forge_internal(sign: &signer): TokenId acquires UrnToEarnConfig {
+        // TODO: check shard balance >= 10
         shard::destroy_ten_shards(sign);
 
         let resource = get_resource_account();
@@ -165,6 +173,8 @@ module owner::urn_to_earn {
     }
 
     public fun reincarnate(sign: &signer, urn_token_id: TokenId) {
+        // check user owns the token
+        assert!(token::balance_of(signer::address_of(sign), urn_token_id) == 1, EINSUFFICIENT_BALANCE);
         urn::burn_urn(sign, urn_token_id);
     }
 
