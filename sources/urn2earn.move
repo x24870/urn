@@ -1,5 +1,7 @@
 module owner::urn_to_earn {
     use aptos_framework::account::{Self, create_signer_with_capability};
+    use aptos_framework::coin::{Self, transfer};
+    use aptos_framework::aptos_coin::{Self, AptosCoin};
     use std::signer;
     use std::vector;
     use std::string::{Self, String};
@@ -27,6 +29,9 @@ module owner::urn_to_earn {
     const MAX_U64: u64 = 18446744073709551615;
 
     const COLLECTION_NAME: vector<u8> = b"URN";
+
+    const SHOEVEL_PRICE: u64 = 10000000; // 0.1 APT
+    const URN_PRICE: u64 = 100000000; // 1 APT
 
     fun init_module(sender: &signer) {
         // Don't run setup more than once
@@ -68,21 +73,33 @@ module owner::urn_to_earn {
     }
 
     public entry fun mint_shovel(sign: &signer) acquires UrnToEarnConfig {
+        mint_shovel_internal(sign);
+    }
+
+    fun mint_shovel_internal(sign: &signer): TokenId acquires UrnToEarnConfig {
+        transfer<AptosCoin>(sign, @owner, SHOEVEL_PRICE);
         let resource = get_resource_account();
         let token_id = shovel::mint(sign, &resource);
         token::initialize_token_store(sign);
         token::opt_in_direct_transfer(sign, true);
         let sender = signer::address_of(sign);
         token::transfer(&resource, token_id, sender, 1);
+        token_id
     }
 
     public entry fun mint_urn(sign: &signer) acquires UrnToEarnConfig {
+        mint_urn_internal(sign);
+    }
+
+    fun mint_urn_internal(sign: &signer): TokenId acquires UrnToEarnConfig {
+        transfer<AptosCoin>(sign, @owner, URN_PRICE);
         let resource = get_resource_account();
         let token_id = urn::mint(sign, &resource);
         token::initialize_token_store(sign);
         token::opt_in_direct_transfer(sign, true);
         let sender = signer::address_of(sign);
         token::transfer(&resource, token_id, sender, 1);
+        token_id
     }
 
     public entry fun mint_bone(sign: &signer) acquires UrnToEarnConfig {
@@ -185,11 +202,9 @@ module owner::urn_to_earn {
     #[test_only]
     use aptos_framework::debug;
     #[test_only]
-    use aptos_framework::coin;
-    #[test_only]
-    use aptos_framework::aptos_coin::{Self, AptosCoin};
-    #[test_only]
     use aptos_framework::option;
+    #[test_only]
+    const INIT_APT: u64 = 1000000000;
 
     #[test_only]
     fun init_for_test(
@@ -215,8 +230,8 @@ module owner::urn_to_earn {
         let (burn_cap, mint_cap) = aptos_coin::initialize_for_test_without_aggregator_factory(aptos_framework);
         coin::destroy_burn_cap<AptosCoin>(burn_cap);
         
-        let apt_for_owner = coin::mint<AptosCoin>(1000000000, &mint_cap);
-        let apt_for_user = coin::mint<AptosCoin>(1000000000, &mint_cap);
+        let apt_for_owner = coin::mint<AptosCoin>(INIT_APT, &mint_cap);
+        let apt_for_user = coin::mint<AptosCoin>(INIT_APT, &mint_cap);
         coin::register<AptosCoin>(owner);
         coin::register<AptosCoin>(user);
         coin::deposit<AptosCoin>(owner_addr, apt_for_owner);
@@ -224,9 +239,9 @@ module owner::urn_to_earn {
 
         coin::destroy_mint_cap<AptosCoin>(mint_cap);
 
-        assert!(coin::balance<AptosCoin>(owner_addr)==1000000000, 0);
-        assert!(coin::balance<AptosCoin>(user_addr)==1000000000, 0);
-        assert!(*option::borrow(&coin::supply<AptosCoin>()) == 2000000000, 0);
+        assert!(coin::balance<AptosCoin>(owner_addr)==INIT_APT, 0);
+        assert!(coin::balance<AptosCoin>(user_addr)==INIT_APT, 0);
+        assert!(*option::borrow(&coin::supply<AptosCoin>()) == (INIT_APT*2 as u128), 0);
     }
 
     #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b)]
@@ -236,15 +251,19 @@ module owner::urn_to_earn {
         init_for_test(aptos_framework, owner, user);
         let user_addr = signer::address_of(user);
         // test mint shovel
-        let resource = get_resource_account();
-        let token_id = shovel::mint(user, &resource);
-        token::transfer(&resource, token_id, user_addr, 1);
+        // let resource = get_resource_account();
+        // let token_id = shovel::mint(user, &resource);
+        // token::transfer(&resource, token_id, user_addr, 1);
+        let token_id = mint_shovel_internal(user);
 
         assert!(token::balance_of(user_addr, token_id) == 1, EINSUFFICIENT_BALANCE);
 
         let bone_token_id = dig_internal(user);
         assert!(token::balance_of(user_addr, token_id) == 0, EINSUFFICIENT_BALANCE);
         assert!(token::balance_of(user_addr, bone_token_id) == 1, EINSUFFICIENT_BALANCE);
+
+        assert!(coin::balance<AptosCoin>(signer::address_of(owner))==INIT_APT+SHOEVEL_PRICE, 0);
+        assert!(coin::balance<AptosCoin>(signer::address_of(user))==INIT_APT-SHOEVEL_PRICE, 0);
     }
 
     #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b)]
@@ -254,13 +273,13 @@ module owner::urn_to_earn {
         init_for_test(aptos_framework, owner, user);
         let user_addr = signer::address_of(user);
         // test mint urn
-        let resource = get_resource_account();
-        let token_id = urn::mint(user, &resource);
-        token::transfer(&resource, token_id, user_addr, 1);
-
+        let token_id = mint_urn_internal(user);
         assert!(token::balance_of(user_addr, token_id) == 1, EINSUFFICIENT_BALANCE);
+        assert!(coin::balance<AptosCoin>(signer::address_of(owner))==INIT_APT+URN_PRICE, 0);
+        assert!(coin::balance<AptosCoin>(signer::address_of(user))==INIT_APT-URN_PRICE, 0);
 
         // test fill
+        let resource = get_resource_account();
         let fullness = urn::get_ash_fullness(token_id, user_addr);
         assert!(fullness == 0, ETOKEN_PROP_MISMATCH);
 
