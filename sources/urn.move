@@ -33,7 +33,7 @@ module owner::urn {
         mint_event: EventHandle<MintEvent>,
         burn_event: EventHandle<BurnEvent>,
         burn_golden_urn_event: EventHandle<BurnGoldenUrnEvent>,
-        urn_burned: SimpleMap<address, u8>,
+        urn_burned: SimpleMap<address, u8>, // TODO: use Table
         golden_urn_burned: SimpleMap<address, u8>,
     }
 

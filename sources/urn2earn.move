@@ -180,14 +180,20 @@ module owner::urn_to_earn {
 
     #[test_only]
     use owner::pseudorandom;
-     #[test_only]
+    #[test_only]
     use aptos_framework::genesis;
-     #[test_only]
+    #[test_only]
     use aptos_framework::debug;
+    #[test_only]
+    use aptos_framework::coin;
+    #[test_only]
+    use aptos_framework::aptos_coin::{Self, AptosCoin};
+    #[test_only]
+    use aptos_framework::option;
 
     #[test_only]
     fun init_for_test(
-        owner: &signer, user: &signer
+        aptos_framework: &signer, owner: &signer, user: &signer
     ) {
         let owner_addr = signer::address_of(owner);
         let user_addr = signer::address_of(user);
@@ -205,13 +211,29 @@ module owner::urn_to_earn {
         genesis::setup();
         pseudorandom::init_for_test(owner);
 
+        // mint 10 APTs for owner & user
+        let (burn_cap, mint_cap) = aptos_coin::initialize_for_test_without_aggregator_factory(aptos_framework);
+        coin::destroy_burn_cap<AptosCoin>(burn_cap);
+        
+        let apt_for_owner = coin::mint<AptosCoin>(1000000000, &mint_cap);
+        let apt_for_user = coin::mint<AptosCoin>(1000000000, &mint_cap);
+        coin::register<AptosCoin>(owner);
+        coin::register<AptosCoin>(user);
+        coin::deposit<AptosCoin>(owner_addr, apt_for_owner);
+        coin::deposit<AptosCoin>(user_addr, apt_for_user);
+
+        coin::destroy_mint_cap<AptosCoin>(mint_cap);
+
+        assert!(coin::balance<AptosCoin>(owner_addr)==1000000000, 0);
+        assert!(coin::balance<AptosCoin>(user_addr)==1000000000, 0);
+        assert!(*option::borrow(&coin::supply<AptosCoin>()) == 2000000000, 0);
     }
 
-    #[test(owner=@owner, user=@0xb0b)]
+    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b)]
     public fun test_shovel(
-        owner: &signer, user: &signer
+        aptos_framework: &signer, owner: &signer, user: &signer
     ) acquires UrnToEarnConfig {
-        init_for_test(owner, user);
+        init_for_test(aptos_framework, owner, user);
         let user_addr = signer::address_of(user);
         // test mint shovel
         let resource = get_resource_account();
@@ -225,11 +247,11 @@ module owner::urn_to_earn {
         assert!(token::balance_of(user_addr, bone_token_id) == 1, EINSUFFICIENT_BALANCE);
     }
 
-    #[test(owner=@owner, user=@0xb0b)]
+    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b)]
     public fun test_urn(
-        owner: &signer, user: &signer
+        aptos_framework: &signer, owner: &signer, user: &signer
     ) acquires UrnToEarnConfig {
-        init_for_test(owner, user);
+        init_for_test(aptos_framework, owner, user);
         let user_addr = signer::address_of(user);
         // test mint urn
         let resource = get_resource_account();
@@ -251,11 +273,11 @@ module owner::urn_to_earn {
         assert!(fullness == 10, ETOKEN_PROP_MISMATCH);
     }
 
-    #[test(owner=@owner, user=@0xb0b)]
+    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b)]
     public fun test_bone(
-        owner: &signer, user: &signer
+        aptos_framework: &signer, owner: &signer, user: &signer
     ) acquires UrnToEarnConfig {
-        init_for_test(owner, user);
+        init_for_test(aptos_framework, owner, user);
         let user_addr = signer::address_of(user);
         let resource = get_resource_account();
 
@@ -286,11 +308,11 @@ module owner::urn_to_earn {
         bone::is_golden_bone(golden_bone_token_id, user_addr);
     }
 
-    #[test(owner=@owner, user=@0xb0b)]
+    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b)]
     public fun test_shard(
-        owner: &signer, user: &signer
+        aptos_framework: &signer, owner: &signer, user: &signer
     ) acquires UrnToEarnConfig {
-        init_for_test(owner, user);
+        init_for_test(aptos_framework, owner, user);
         let user_addr = signer::address_of(user);
         let resource = get_resource_account();
         // test mint shard
@@ -313,12 +335,12 @@ module owner::urn_to_earn {
         assert!(token::balance_of(user_addr, golden_urn_token_id) == 1, EINSUFFICIENT_BALANCE);
     }
 
-    #[test(owner=@owner, user=@0xb0b)]
+    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b)]
     #[expected_failure(abort_code = ETOKEN_PROP_MISMATCH)]
     public fun test_urn_and_golden_bone(
-        owner: &signer, user: &signer
+        aptos_framework: &signer, owner: &signer, user: &signer
     ) acquires UrnToEarnConfig {
-        init_for_test(owner, user);
+        init_for_test(aptos_framework, owner, user);
         let user_addr = signer::address_of(user);
         let resource = get_resource_account();
 
@@ -335,12 +357,12 @@ module owner::urn_to_earn {
         _ = burn_and_fill_internal(user, urn_token_id, golden_bone_token_id);
     }
 
-    #[test(owner=@owner, user=@0xb0b)]
+    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b)]
     #[expected_failure(abort_code = ETOKEN_PROP_MISMATCH)]
     public fun test_golden_urn_and_bone(
-        owner: &signer, user: &signer
+        aptos_framework: &signer, owner: &signer, user: &signer
     ) acquires UrnToEarnConfig {
-        init_for_test(owner, user);
+        init_for_test(aptos_framework, owner, user);
         let user_addr = signer::address_of(user);
         let resource = get_resource_account();
 
@@ -371,12 +393,12 @@ module owner::urn_to_earn {
         _ = burn_and_fill_internal(user, golden_urn_token_id, bone_token_id);
     }
 
-    #[test(owner=@owner, user=@0xb0b)]
+    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b)]
     #[expected_failure(abort_code = urn::EURN_OVERFLOW)]
     public fun test_urn_overflow(
-        owner: &signer, user: &signer
+        aptos_framework: &signer, owner: &signer, user: &signer
     ) acquires UrnToEarnConfig {
-        init_for_test(owner, user);
+        init_for_test(aptos_framework, owner, user);
         let user_addr = signer::address_of(user);
         let resource = get_resource_account();
         
@@ -399,12 +421,12 @@ module owner::urn_to_earn {
         burn_and_fill_internal(user, urn_token_id, bone_token_id_3);
     }
 
-    #[test(owner=@owner, user=@0xb0b)]
+    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b)]
     #[expected_failure(abort_code = urn::EURN_NOT_FULL)]
     public fun test_urn_not_full(
-        owner: &signer, user: &signer
+        aptos_framework: &signer, owner: &signer, user: &signer
     ) acquires UrnToEarnConfig {
-        init_for_test(owner, user);
+        init_for_test(aptos_framework, owner, user);
         let user_addr = signer::address_of(user);
         let resource = get_resource_account();
         
@@ -422,11 +444,11 @@ module owner::urn_to_earn {
         reincarnate(user, urn_token_id);
     }
 
-    #[test(owner=@owner, user=@0xb0b)]
+    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b)]
     public fun test_reincarnate(
-        owner: &signer, user: &signer
+        aptos_framework: &signer, owner: &signer, user: &signer
     ) acquires UrnToEarnConfig {
-        init_for_test(owner, user);
+        init_for_test(aptos_framework, owner, user);
         let user_addr = signer::address_of(user);
         let resource = get_resource_account();
         
