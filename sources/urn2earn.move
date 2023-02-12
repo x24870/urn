@@ -251,19 +251,14 @@ module owner::urn_to_earn {
         init_for_test(aptos_framework, owner, user);
         let user_addr = signer::address_of(user);
         // test mint shovel
-        // let resource = get_resource_account();
-        // let token_id = shovel::mint(user, &resource);
-        // token::transfer(&resource, token_id, user_addr, 1);
         let token_id = mint_shovel_internal(user);
-
         assert!(token::balance_of(user_addr, token_id) == 1, EINSUFFICIENT_BALANCE);
+        assert!(coin::balance<AptosCoin>(signer::address_of(owner))==INIT_APT+SHOEVEL_PRICE, 0);
+        assert!(coin::balance<AptosCoin>(signer::address_of(user))==INIT_APT-SHOEVEL_PRICE, 0);
 
         let bone_token_id = dig_internal(user);
         assert!(token::balance_of(user_addr, token_id) == 0, EINSUFFICIENT_BALANCE);
         assert!(token::balance_of(user_addr, bone_token_id) == 1, EINSUFFICIENT_BALANCE);
-
-        assert!(coin::balance<AptosCoin>(signer::address_of(owner))==INIT_APT+SHOEVEL_PRICE, 0);
-        assert!(coin::balance<AptosCoin>(signer::address_of(user))==INIT_APT-SHOEVEL_PRICE, 0);
     }
 
     #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b)]
