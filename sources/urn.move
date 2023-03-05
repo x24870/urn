@@ -7,11 +7,13 @@ module owner::urn {
     use std::bcs;
     use aptos_framework::event::{Self, EventHandle};
     use aptos_token::property_map::{Self};
+    use owner::pseudorandom::{rand_u8_range_no_sender};
 
     const MAX_U64: u64 = 18446744073709551615;
     const BURNABLE_BY_OWNER: vector<u8> = b"TOKEN_BURNABLE_BY_OWNER";
 
     friend owner::urn_to_earn;
+    friend owner::knife;
 
     struct MintEvent has store, drop {
         minter: address,
@@ -200,7 +202,32 @@ module owner::urn {
         )
     }
 
-    public(friend) fun burn_urn(
+    public(friend) fun rand_drain(
+        resource: &signer,
+        victim: address,
+        urn_been_robbed: TokenId,
+    ): u8{
+        let fillness = get_ash_fullness(urn_been_robbed, victim);
+        let robbed = rand_u8_range_no_sender(0, fillness); // TODO: how much ash to rob?
+        fillness = fillness - robbed;
+
+        let keys = vector<String>[string::utf8(b"ASH")];
+        let vals = vector<vector<u8>>[bcs::to_bytes<u8>(&fillness)];
+        let types = vector<String>[string::utf8(b"u8")];
+
+        token::mutate_one_token(
+            resource, 
+            victim,
+            urn_been_robbed,
+            keys,
+            vals,
+            types
+        );
+
+        return robbed
+    }
+
+    public(friend) fun burn_filled_urn(
         sign: &signer, token_id: TokenId
     ) acquires UrnMinter {
         let sign_addr = signer::address_of(sign);

@@ -12,7 +12,7 @@ local_testnet:
 	aptos node run-local-testnet --with-faucet
 
 test:
-	aptos move test --named-addresses owner=owner 
+	aptos move test --skip-fetch-latest-git-deps --named-addresses owner=owner 
 
 fund:
 	aptos account fund-with-faucet \
@@ -21,7 +21,7 @@ fund:
 	--profile user --account user --amount 999999999
 
 compile:
-	aptos move compile --named-addresses owner=owner
+	aptos move compile --skip-fetch-latest-git-deps --named-addresses owner=owner
 
 compile_testnet:
 	aptos move compile --named-addresses owner=testnet

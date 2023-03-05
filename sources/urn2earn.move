@@ -10,6 +10,7 @@ module owner::urn_to_earn {
     use owner::urn;
     use owner::bone;
     use owner::shard;
+    use owner::knife;
 
     struct UrnToEarnConfig has key {
         description: String,
@@ -20,11 +21,12 @@ module owner::urn_to_earn {
         cap: account::SignerCapability,
     }
 
-    const ENOT_AUTHORIZED: u64 = 1;
+    const ENOT_AUTHORIZED:           u64 = 1;
     const EHAS_ALREADY_CLAIMED_MINT: u64 = 2;
-    const EMINTING_NOT_ENABLED: u64 = 3;
-    const EINSUFFICIENT_BALANCE: u64 = 4;
-    const ETOKEN_PROP_MISMATCH: u64 = 5;
+    const EMINTING_NOT_ENABLED:      u64 = 3;
+    const EINSUFFICIENT_BALANCE:     u64 = 4;
+    const ETOKEN_PROP_MISMATCH:      u64 = 5;
+    const ETEST_ERROR:               u64 = 6;
 
     const MAX_U64: u64 = 18446744073709551615;
 
@@ -55,6 +57,7 @@ module owner::urn_to_earn {
         urn::init_urn(sender, &resource, name);
         bone::init_bone(sender, &resource, name);
         shard::init_shard(sender, &resource, name);
+        knife::init_knife(sender, &resource, name);
 
         move_to(sender, UrnToEarnConfig {
             description: description,
@@ -147,7 +150,10 @@ module owner::urn_to_earn {
         let point = bone::burn_bone(sign, bone_token_id);
         let resource = get_resource_account();
 
-        urn::fill(sign, &resource, urn_token_id, point)
+        let filled_urn = urn::fill(sign, &resource, urn_token_id, point);
+        knife::add_victim(sign, filled_urn);
+
+        return filled_urn
     }
 
     public entry fun dig(
@@ -192,7 +198,7 @@ module owner::urn_to_earn {
     public fun reincarnate(sign: &signer, urn_token_id: TokenId) {
         // check user owns the token
         assert!(token::balance_of(signer::address_of(sign), urn_token_id) == 1, EINSUFFICIENT_BALANCE);
-        urn::burn_urn(sign, urn_token_id);
+        urn::burn_filled_urn(sign, urn_token_id);
     }
 
     #[test_only]
@@ -208,12 +214,14 @@ module owner::urn_to_earn {
 
     #[test_only]
     fun init_for_test(
-        aptos_framework: &signer, owner: &signer, user: &signer
+        aptos_framework: &signer, owner: &signer, user: &signer, robber: &signer
     ) {
         let owner_addr = signer::address_of(owner);
         let user_addr = signer::address_of(user);
+        let robber_addr = signer::address_of(robber);
         aptos_framework::account::create_account_for_test(owner_addr);
         aptos_framework::account::create_account_for_test(user_addr);
+        aptos_framework::account::create_account_for_test(robber_addr);
 
         init_module(owner);
         assert!(exists<UrnToEarnConfig>(owner_addr), 0);
@@ -221,6 +229,8 @@ module owner::urn_to_earn {
         // enable token opt-in
         token::initialize_token_store(user);
         token::opt_in_direct_transfer(user, true);
+        token::initialize_token_store(robber);
+        token::opt_in_direct_transfer(robber, true);
 
         // init pseudorandom pre-requirements 
         genesis::setup();
@@ -232,23 +242,27 @@ module owner::urn_to_earn {
         
         let apt_for_owner = coin::mint<AptosCoin>(INIT_APT, &mint_cap);
         let apt_for_user = coin::mint<AptosCoin>(INIT_APT, &mint_cap);
+        let apt_for_robber = coin::mint<AptosCoin>(INIT_APT, &mint_cap);
         coin::register<AptosCoin>(owner);
         coin::register<AptosCoin>(user);
+        coin::register<AptosCoin>(robber);
         coin::deposit<AptosCoin>(owner_addr, apt_for_owner);
         coin::deposit<AptosCoin>(user_addr, apt_for_user);
+        coin::deposit<AptosCoin>(robber_addr, apt_for_robber);
 
         coin::destroy_mint_cap<AptosCoin>(mint_cap);
 
         assert!(coin::balance<AptosCoin>(owner_addr)==INIT_APT, 0);
         assert!(coin::balance<AptosCoin>(user_addr)==INIT_APT, 0);
-        assert!(*option::borrow(&coin::supply<AptosCoin>()) == (INIT_APT*2 as u128), 0);
+        assert!(coin::balance<AptosCoin>(robber_addr)==INIT_APT, 0);
+        assert!(*option::borrow(&coin::supply<AptosCoin>()) == (INIT_APT*3 as u128), 0);
     }
 
-    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b)]
+    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b, robber=@0x0bb3)]
     public fun test_shovel(
-        aptos_framework: &signer, owner: &signer, user: &signer
+        aptos_framework: &signer, owner: &signer, user: &signer, robber: &signer
     ) acquires UrnToEarnConfig {
-        init_for_test(aptos_framework, owner, user);
+        init_for_test(aptos_framework, owner, user, robber);
         let user_addr = signer::address_of(user);
         // test mint shovel
         let token_id = mint_shovel_internal(user);
@@ -261,11 +275,11 @@ module owner::urn_to_earn {
         assert!(token::balance_of(user_addr, bone_token_id) == 1, EINSUFFICIENT_BALANCE);
     }
 
-    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b)]
+    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b, robber=@0x0bb3)]
     public fun test_urn(
-        aptos_framework: &signer, owner: &signer, user: &signer
+        aptos_framework: &signer, owner: &signer, user: &signer, robber: &signer
     ) acquires UrnToEarnConfig {
-        init_for_test(aptos_framework, owner, user);
+        init_for_test(aptos_framework, owner, user, robber);
         let user_addr = signer::address_of(user);
         // test mint urn
         let token_id = mint_urn_internal(user);
@@ -287,11 +301,11 @@ module owner::urn_to_earn {
         assert!(fullness == 10, ETOKEN_PROP_MISMATCH);
     }
 
-    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b)]
+    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b, robber=@0x0bb3)]
     public fun test_bone(
-        aptos_framework: &signer, owner: &signer, user: &signer
+        aptos_framework: &signer, owner: &signer, user: &signer, robber: &signer
     ) acquires UrnToEarnConfig {
-        init_for_test(aptos_framework, owner, user);
+        init_for_test(aptos_framework, owner, user, robber);
         let user_addr = signer::address_of(user);
         let resource = get_resource_account();
 
@@ -322,11 +336,11 @@ module owner::urn_to_earn {
         bone::is_golden_bone(golden_bone_token_id, user_addr);
     }
 
-    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b)]
+    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b, robber=@0x0bb3)]
     public fun test_shard(
-        aptos_framework: &signer, owner: &signer, user: &signer
+        aptos_framework: &signer, owner: &signer, user: &signer, robber: &signer
     ) acquires UrnToEarnConfig {
-        init_for_test(aptos_framework, owner, user);
+        init_for_test(aptos_framework, owner, user, robber);
         let user_addr = signer::address_of(user);
         let resource = get_resource_account();
         // test mint shard
@@ -349,12 +363,12 @@ module owner::urn_to_earn {
         assert!(token::balance_of(user_addr, golden_urn_token_id) == 1, EINSUFFICIENT_BALANCE);
     }
 
-    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b)]
+    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b, robber=@0x0bb3)]
     #[expected_failure(abort_code = ETOKEN_PROP_MISMATCH)]
     public fun test_urn_and_golden_bone(
-        aptos_framework: &signer, owner: &signer, user: &signer
+        aptos_framework: &signer, owner: &signer, user: &signer, robber: &signer
     ) acquires UrnToEarnConfig {
-        init_for_test(aptos_framework, owner, user);
+        init_for_test(aptos_framework, owner, user, robber);
         let user_addr = signer::address_of(user);
         let resource = get_resource_account();
 
@@ -371,12 +385,12 @@ module owner::urn_to_earn {
         _ = burn_and_fill_internal(user, urn_token_id, golden_bone_token_id);
     }
 
-    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b)]
+    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b, robber=@0x0bb3)]
     #[expected_failure(abort_code = ETOKEN_PROP_MISMATCH)]
     public fun test_golden_urn_and_bone(
-        aptos_framework: &signer, owner: &signer, user: &signer
+        aptos_framework: &signer, owner: &signer, user: &signer, robber: &signer
     ) acquires UrnToEarnConfig {
-        init_for_test(aptos_framework, owner, user);
+        init_for_test(aptos_framework, owner, user, robber);
         let user_addr = signer::address_of(user);
         let resource = get_resource_account();
 
@@ -407,12 +421,12 @@ module owner::urn_to_earn {
         _ = burn_and_fill_internal(user, golden_urn_token_id, bone_token_id);
     }
 
-    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b)]
+    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b, robber=@0x0bb3)]
     #[expected_failure(abort_code = urn::EURN_OVERFLOW)]
     public fun test_urn_overflow(
-        aptos_framework: &signer, owner: &signer, user: &signer
+        aptos_framework: &signer, owner: &signer, user: &signer, robber: &signer
     ) acquires UrnToEarnConfig {
-        init_for_test(aptos_framework, owner, user);
+        init_for_test(aptos_framework, owner, user, robber);
         let user_addr = signer::address_of(user);
         let resource = get_resource_account();
         
@@ -435,12 +449,12 @@ module owner::urn_to_earn {
         burn_and_fill_internal(user, urn_token_id, bone_token_id_3);
     }
 
-    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b)]
+    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b, robber=@0x0bb3)]
     #[expected_failure(abort_code = urn::EURN_NOT_FULL)]
     public fun test_urn_not_full(
-        aptos_framework: &signer, owner: &signer, user: &signer
+        aptos_framework: &signer, owner: &signer, user: &signer, robber: &signer
     ) acquires UrnToEarnConfig {
-        init_for_test(aptos_framework, owner, user);
+        init_for_test(aptos_framework, owner, user, robber);
         let user_addr = signer::address_of(user);
         let resource = get_resource_account();
         
@@ -458,11 +472,11 @@ module owner::urn_to_earn {
         reincarnate(user, urn_token_id);
     }
 
-    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b)]
+    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b, robber=@0x0bb3)]
     public fun test_reincarnate(
-        aptos_framework: &signer, owner: &signer, user: &signer
+        aptos_framework: &signer, owner: &signer, user: &signer, robber: &signer
     ) acquires UrnToEarnConfig {
-        init_for_test(aptos_framework, owner, user);
+        init_for_test(aptos_framework, owner, user, robber);
         let user_addr = signer::address_of(user);
         let resource = get_resource_account();
         
@@ -488,5 +502,41 @@ module owner::urn_to_earn {
 
         // TODO: check if urn_burned map is updates
         // TODO: test reincarnate multiple times
+    }
+
+    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b, robber=@0x0bb3)]
+    public fun test_rob(
+        aptos_framework: &signer, owner: &signer, user: &signer, robber: &signer
+    ) acquires UrnToEarnConfig {
+        init_for_test(aptos_framework, owner, user, robber);
+        let user_addr = signer::address_of(user);
+        let robber_addr = signer::address_of(robber);
+        let resource = get_resource_account();
+        
+        // mint urn for user and robber 
+        let user_urn = urn::mint(user, &resource);
+        token::transfer(&resource, user_urn, user_addr, 1);
+        let robber_urn = urn::mint(robber, &resource);
+        token::transfer(&resource, robber_urn, robber_addr, 1);
+
+        // mint test skulls
+        let bone_token_id_1 = bone::mint_50point_skull(user, &resource);
+        token::transfer(&resource, bone_token_id_1, user_addr, 1);
+
+        user_urn = burn_and_fill_internal(user, user_urn, bone_token_id_1);
+        assert!(urn::get_ash_fullness(user_urn, user_addr) == 50, ETOKEN_PROP_MISMATCH);
+        assert!(token::balance_of(user_addr, bone_token_id_1) == 0, EINSUFFICIENT_BALANCE);
+        assert!(knife::contains_victim(user_addr), ETEST_ERROR);
+
+        // mint knife for robber
+        let knife_token_id = knife::mint(user, &resource);
+        token::transfer(&resource, knife_token_id, robber_addr, 1);
+
+        let (robber_urn, amount) = knife::rob(robber, robber_urn, &resource);
+        assert!(token::balance_of(robber_addr, knife_token_id) == 0, EINSUFFICIENT_BALANCE);
+        assert!(urn::get_ash_fullness(user_urn, user_addr)+amount==50, ETOKEN_PROP_MISMATCH);
+        assert!(urn::get_ash_fullness(robber_urn, robber_addr)==amount, ETOKEN_PROP_MISMATCH);
+        assert!(!knife::contains_victim(user_addr), ETEST_ERROR);
+        debug::print(&amount);
     }
 }

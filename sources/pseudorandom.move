@@ -138,6 +138,8 @@ module owner::pseudorandom {
     public fun rand_u128_range_no_sender(low: u128, high: u128): u128 acquires Counter { rand_u128_range_with_seed(seed_no_sender(), low, high) }
     public fun rand_u64_no_sender(): u64 acquires Counter { rand_u64_with_seed(seed_no_sender()) }
     public fun rand_u64_range_no_sender(low: u64, high: u64): u64 acquires Counter { rand_u64_range_with_seed(seed_no_sender(), low, high) }
+    public fun rand_u8_range_no_sender(low: u8, high: u8): u8 acquires Counter { rand_u8_range_with_seed(seed_no_sender(), low, high) }
+
 
     #[test_only]
     public fun init_for_test(sign: &signer) {
