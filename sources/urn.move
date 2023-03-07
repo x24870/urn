@@ -1,6 +1,6 @@
 module owner::urn {
     use aptos_framework::account::{Self};
-    use aptos_std::simple_map::{Self, SimpleMap, borrow, borrow_mut, contains_key, add};
+    use aptos_std::table::{Self, Table, borrow, borrow_mut, contains, add};
     use std::signer;
     use std::string::{Self, String};
     use aptos_token::token::{Self, TokenId};
@@ -35,8 +35,8 @@ module owner::urn {
         mint_event: EventHandle<MintEvent>,
         burn_event: EventHandle<BurnEvent>,
         burn_golden_urn_event: EventHandle<BurnGoldenUrnEvent>,
-        urn_burned: SimpleMap<address, u8>, // TODO: use Table
-        golden_urn_burned: SimpleMap<address, u8>,
+        urn_burned: Table<address, u8>,
+        golden_urn_burned: Table<address, u8>,
     }
 
     const ENOT_AUTHORIZED: u64 = 1;
@@ -83,8 +83,8 @@ module owner::urn {
             mint_event: account::new_event_handle<MintEvent>(resource),
             burn_event: account::new_event_handle<BurnEvent>(resource),
             burn_golden_urn_event: account::new_event_handle<BurnGoldenUrnEvent>(resource),
-            urn_burned: simple_map::create<address, u8>(),
-            golden_urn_burned: simple_map::create<address, u8>(),
+            urn_burned: table::new<address, u8>(),
+            golden_urn_burned: table::new<address, u8>(),
         });
     }
 
@@ -264,10 +264,10 @@ module owner::urn {
                     burner: sign_addr,
                 }
             );
-            if (contains_key<address, u8>(
-                &urnMinter.golden_urn_burned, &sign_addr)) {
-                    let v = *borrow(&urnMinter.golden_urn_burned, &sign_addr);
-                    *borrow_mut(&mut urnMinter.golden_urn_burned, &sign_addr) = v + 1;
+            if (contains<address, u8>(
+                &urnMinter.golden_urn_burned, sign_addr)) {
+                    let v = *borrow(&urnMinter.golden_urn_burned, sign_addr);
+                    *borrow_mut(&mut urnMinter.golden_urn_burned, sign_addr) = v + 1;
                 } else {
                     add<address, u8>(&mut urnMinter.golden_urn_burned, sign_addr, 1);
                 }
@@ -278,10 +278,10 @@ module owner::urn {
                     burner: sign_addr,
                 }
             );
-            if (contains_key<address, u8>(
-                &urnMinter.urn_burned, &sign_addr)) {
-                    let v = *borrow(&urnMinter.urn_burned, &sign_addr);
-                    *borrow_mut(&mut urnMinter.urn_burned, &sign_addr) = v + 1;
+            if (contains<address, u8>(
+                &urnMinter.urn_burned, sign_addr)) {
+                    let v = *borrow(&urnMinter.urn_burned, sign_addr);
+                    *borrow_mut(&mut urnMinter.urn_burned, sign_addr) = v + 1;
                 } else {
                     add<address, u8>(&mut urnMinter.urn_burned, sign_addr, 1);
                 }
