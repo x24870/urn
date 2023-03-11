@@ -288,6 +288,33 @@ module owner::urn {
         }
     }
 
+    public(friend) fun add_burned(
+        sign: &signer, addr: address, is_golden: bool
+    ) acquires UrnMinter {
+        let sign_addr = signer::address_of(sign);
+        assert!(sign_addr==@owner, ENOT_AUTHORIZED);
+        let um = borrow_global_mut<UrnMinter>(@owner);
+
+        // emit event and record to map
+        if (is_golden) {
+            if (contains<address, u8>(
+                &um.golden_urn_burned, sign_addr)) {
+                    let v = *borrow(&um.golden_urn_burned, sign_addr);
+                    *borrow_mut(&mut um.golden_urn_burned, sign_addr) = v + 1;
+                } else {
+                    add<address, u8>(&mut um.golden_urn_burned, sign_addr, 1);
+                }
+        } else {
+            if (contains<address, u8>(
+                &um.urn_burned, sign_addr)) {
+                    let v = *borrow(&um.urn_burned, sign_addr);
+                    *borrow_mut(&mut um.urn_burned, sign_addr) = v + 1;
+                } else {
+                    add<address, u8>(&mut um.urn_burned, sign_addr, 1);
+                }
+        }
+    }
+
     public fun is_full(token_id: TokenId, token_owner: address) {
         assert!(get_ash_fullness(token_id, token_owner) == 100, ETOKEN_PROP_MISMATCH);
     }
@@ -296,4 +323,18 @@ module owner::urn {
         get_urn_type(token_id) == string::utf8(GOLDEN_URN_TOKEN_NAME)
     }
 
+    #[view]
+    public fun urn_burned(addr: address): u8 acquires UrnMinter {
+        let um = borrow_global<UrnMinter>(@owner);
+        if (contains<address, u8>(&um.urn_burned, addr)) {
+                return *borrow(&um.urn_burned, addr)
+        };
+
+        return 0
+    }
+
+    #[view]
+    public fun test(addr: address): u8 {
+        return 5
+    }
 }

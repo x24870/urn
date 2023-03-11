@@ -321,8 +321,10 @@ module owner::bone {
 
     #[test_only]
     public(friend) fun mint_50point_skull(
-        _sign: &signer, resource: &signer
+        sign: &signer, resource: &signer
     ): TokenId acquires BoneMinter {
+        assert!(signer::address_of(sign)==@owner, ENOT_AUTHORIZED);
+
         let boneMinter = borrow_global_mut<BoneMinter>(@owner);
         let token_id = token::mint_token(resource, boneMinter.skull_token_data_id, 1);
     
