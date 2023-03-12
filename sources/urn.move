@@ -296,16 +296,14 @@ module owner::urn {
 
         // emit event and record to map
         if (is_golden) {
-            if (contains<address, u8>(
-                &um.golden_urn_burned, addr)) {
+            if (contains<address, u8>(&um.golden_urn_burned, addr)) {
                     let v = *borrow(&um.golden_urn_burned, addr);
                     *borrow_mut(&mut um.golden_urn_burned, addr) = v + 1;
                 } else {
                     add<address, u8>(&mut um.golden_urn_burned, addr, 1);
                 }
         } else {
-            if (contains<address, u8>(
-                &um.urn_burned, addr)) {
+            if (contains<address, u8>(&um.urn_burned, addr)) {
                     let v = *borrow(&um.urn_burned, addr);
                     *borrow_mut(&mut um.urn_burned, addr) = v + 1;
                 } else {
