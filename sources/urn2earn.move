@@ -435,11 +435,11 @@ module owner::urn_to_earn {
         token::transfer(&resource, urn_token_id, user_addr, 1);
 
         // mint test skulls
-        let bone_token_id_1 = bone::mint_50point_skull(user, &resource);
+        let bone_token_id_1 = bone::mint_50point_skull(owner, &resource);
         token::transfer(&resource, bone_token_id_1, user_addr, 1);
-        let bone_token_id_2 = bone::mint_50point_skull(user, &resource);
+        let bone_token_id_2 = bone::mint_50point_skull(owner, &resource);
         token::transfer(&resource, bone_token_id_2, user_addr, 1);
-        let bone_token_id_3 = bone::mint_50point_skull(user, &resource);
+        let bone_token_id_3 = bone::mint_50point_skull(owner, &resource);
         token::transfer(&resource, bone_token_id_3, user_addr, 1);
 
         urn_token_id = burn_and_fill_internal(user, urn_token_id, bone_token_id_1);
@@ -463,7 +463,7 @@ module owner::urn_to_earn {
         token::transfer(&resource, urn_token_id, user_addr, 1);
 
         // mint test skulls
-        let bone_token_id_1 = bone::mint_50point_skull(user, &resource);
+        let bone_token_id_1 = bone::mint_50point_skull(owner, &resource);
         token::transfer(&resource, bone_token_id_1, user_addr, 1);
 
         urn_token_id = burn_and_fill_internal(user, urn_token_id, bone_token_id_1);
@@ -485,9 +485,9 @@ module owner::urn_to_earn {
         token::transfer(&resource, urn_token_id, user_addr, 1);
 
         // mint test skulls
-        let bone_token_id_1 = bone::mint_50point_skull(user, &resource);
+        let bone_token_id_1 = bone::mint_50point_skull(owner, &resource);
         token::transfer(&resource, bone_token_id_1, user_addr, 1);
-        let bone_token_id_2 = bone::mint_50point_skull(user, &resource);
+        let bone_token_id_2 = bone::mint_50point_skull(owner, &resource);
         token::transfer(&resource, bone_token_id_2, user_addr, 1);
 
         urn_token_id = burn_and_fill_internal(user, urn_token_id, bone_token_id_1);
@@ -520,7 +520,7 @@ module owner::urn_to_earn {
         token::transfer(&resource, robber_urn, robber_addr, 1);
 
         // mint test skulls
-        let bone_token_id_1 = bone::mint_50point_skull(user, &resource);
+        let bone_token_id_1 = bone::mint_50point_skull(owner, &resource);
         token::transfer(&resource, bone_token_id_1, user_addr, 1);
 
         user_urn = burn_and_fill_internal(user, user_urn, bone_token_id_1);

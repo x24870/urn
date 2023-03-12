@@ -76,13 +76,11 @@ query_testnet_res:
 
 view:
 	curl --request POST \
-	--url http://0.0.0.0:8080/v1/view \
+	--url https://fullnode.devnet.aptoslabs.com/v1/view \
 	--header 'Content-Type: application/json' \
 	--data '{ \
-		"function": "${OWNER}::urn::urn_burned", \
-		"arguments": [ \
-			"${OWNER}" \
-			], \
-		"type_arguments": [] \
-		}'
+		"function": "0x1::coin::is_coin_initialized", \
+		"type_arguments": [ "0x1::aptos_coin::AptosCoin" ], \
+		"arguments": [] \
+	}'
 
