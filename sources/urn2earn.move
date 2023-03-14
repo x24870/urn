@@ -11,6 +11,7 @@ module owner::urn_to_earn {
     use owner::bone;
     use owner::shard;
     use owner::knife;
+    use owner::whitelist;
 
     struct UrnToEarnConfig has key {
         description: String,
@@ -58,6 +59,8 @@ module owner::urn_to_earn {
         bone::init_bone(sender, &resource, name);
         shard::init_shard(sender, &resource, name);
         knife::init_knife(sender, &resource, name);
+        // setup whitelist module
+        whitelist::init_whitelist_config(sender);
 
         move_to(sender, UrnToEarnConfig {
             description: description,

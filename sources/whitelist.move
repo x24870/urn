@@ -5,7 +5,6 @@ module owner::whitelist {
     use std::string::{String};
     use aptos_std::table::{Self, Table, contains, borrow, borrow_mut, add};
     // use aptos_framework::timestamp;
-    // use owner::bucket_table::{BucketTable, contains, borrow, borrow_mut, add};
 
     const ENOT_AUTHORIZED:         u64 = 1;
     const ECONFIG_NOT_INITIALIZED: u64 = 2;
@@ -50,8 +49,9 @@ module owner::whitelist {
     }
 
     public entry fun add_collection(
-        collection: String, free_quota: u64, discount_quota: u64
+        owner: &signer, collection: String, free_quota: u64, discount_quota: u64
     ) acquires WhitelistConfig {
+        assert!(signer::address_of(owner) == @owner, error::permission_denied(ENOT_AUTHORIZED));
         let wl_config = borrow_global_mut<WhitelistConfig>(@owner);
         assert!(!contains<String, Whitelist>(&wl_config.whitelists, collection), EINVALID_COLLECTION);
         add<String, Whitelist>(
@@ -105,5 +105,25 @@ module owner::whitelist {
             return DISCOUNTED_MINT
         };
         return MINT
+    }
+
+    #[view]
+    public fun sum(nums: vector<u64>): u64 {
+        let i = 0;
+        let s = 0;
+        while(i < vector::length<u64>(&nums)) {
+            s = s + *vector::borrow(&nums, i);
+            i = i + 1;
+        };
+        return s
+    }
+
+    public entry fun sum2(nums: vector<u64>) {
+        let i = 0;
+        let s = 0;
+        while(i < vector::length<u64>(&nums)) {
+            s = s + *vector::borrow(&nums, i);
+            i = i + 1;
+        };
     }
 }

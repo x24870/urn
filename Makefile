@@ -1,6 +1,6 @@
 FAUCET_URL=http://0.0.0.0:8081
 REST_URL=http://0.0.0.0:8080
-OWNER=0xe7859ebed3613eaf2135be9deaf54f895d84e1505bdb0eba29c1e8c87d154949
+OWNER=0x908f61f6d70927b6542402c89b0535f286f80922f8f5acbf2c9316675d685bd5
 
 init_profiles:
 	aptos init --profile owner --rest-url ${REST_URL} --faucet-url ${FAUCET_URL}
@@ -76,7 +76,7 @@ query_testnet_res:
 
 view:
 	curl --request POST \
-	--url https://fullnode.devnet.aptoslabs.com/v1/view \
+	--url ${REST_URL}/v1/view \
 	--header 'Content-Type: application/json' \
 	--data '{ \
 		"function": "0x1::coin::is_coin_initialized", \
@@ -84,3 +84,32 @@ view:
 		"arguments": [] \
 	}'
 
+sum:
+	curl --request POST \
+	--url ${REST_URL}/v1/view \
+	--header 'Content-Type: application/json' \
+	--data '{ \
+		"function": "${OWNER}::whitelist::sum", \
+		"type_arguments": [], \
+		"arguments": [["5", "6"]] \
+	}'
+
+add_wl:
+	aptos move run-script --assume-yes \
+        --compiled-script-path build/urn_to_earn/bytecode_scripts/add_to_whitelist.mv \
+        --sender-account owner --profile=owner \
+
+add_collection:
+	aptos move run-script --assume-yes \
+        --compiled-script-path build/urn_to_earn/bytecode_scripts/add_collection.mv \
+        --sender-account owner --profile=owner \
+
+add_wl_cli:
+	aptos move run-script --assume-yes \
+        --compiled-script-path build/urn_to_earn/bytecode_scripts/add_to_whitelist2.mv \
+        --sender-account owner --profile=owner \
+
+sum2:
+	aptos move run --function-id ${OWNER}::whitelist::sum2 \
+	--sender-account=owner --profile=owner \
+	--args 'vector<u64>:1,2,3'
