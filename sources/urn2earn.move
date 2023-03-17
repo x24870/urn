@@ -28,6 +28,7 @@ module owner::urn_to_earn {
     const EINSUFFICIENT_BALANCE:     u64 = 4;
     const ETOKEN_PROP_MISMATCH:      u64 = 5;
     const ETEST_ERROR:               u64 = 6;
+    const EWL_QUOTA_OUT:             u64 = 7;
 
     const MAX_U64: u64 = 18446744073709551615;
 
@@ -79,11 +80,25 @@ module owner::urn_to_earn {
     }
 
     public entry fun mint_shovel(sign: &signer) acquires UrnToEarnConfig {
-        mint_shovel_internal(sign);
+        mint_shovel_internal(sign, SHOEVEL_PRICE);
     }
 
-    fun mint_shovel_internal(sign: &signer): TokenId acquires UrnToEarnConfig {
-        transfer<AptosCoin>(sign, @owner, SHOEVEL_PRICE);
+    public entry fun bayc_wl_mint_shovel(sign: &signer) acquires UrnToEarnConfig {
+        let mint_type = whitelist::label_minted(string::utf8(b"BAYC"), signer::address_of(sign));
+        // FREE_MINT:0, DISCOUNTED_MINT:1, MINT:2
+        let shovel_price = SHOEVEL_PRICE;
+        if (mint_type == 0) {
+            shovel_price = 0
+        } else if (mint_type == 1) {
+            shovel_price = shovel_price / 2
+        } else {
+            assert!(false, EWL_QUOTA_OUT);
+        };
+        mint_shovel_internal(sign, shovel_price);
+    }
+
+    fun mint_shovel_internal(sign: &signer, price: u64): TokenId acquires UrnToEarnConfig {
+        transfer<AptosCoin>(sign, @owner, price);
         let resource = get_resource_account();
         let token_id = shovel::mint(sign, &resource);
         token::initialize_token_store(sign);
@@ -268,7 +283,7 @@ module owner::urn_to_earn {
         init_for_test(aptos_framework, owner, user, robber);
         let user_addr = signer::address_of(user);
         // test mint shovel
-        let token_id = mint_shovel_internal(user);
+        let token_id = mint_shovel_internal(user, SHOEVEL_PRICE);
         assert!(token::balance_of(user_addr, token_id) == 1, EINSUFFICIENT_BALANCE);
         assert!(coin::balance<AptosCoin>(signer::address_of(owner))==INIT_APT+SHOEVEL_PRICE, 0);
         assert!(coin::balance<AptosCoin>(signer::address_of(user))==INIT_APT-SHOEVEL_PRICE, 0);

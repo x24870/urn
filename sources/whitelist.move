@@ -108,6 +108,15 @@ module owner::whitelist {
     }
 
     #[view]
+    public fun get_collection_left_quota(
+        collection: String
+    ):(u64, u64) acquires WhitelistConfig {
+        let wl_config = borrow_global<WhitelistConfig>(@owner);
+        let wl = borrow<String, Whitelist>(&wl_config.whitelists, collection);
+        return (wl.free_quota, wl.discount_quota)
+    }
+
+    #[view]
     public fun sum(nums: vector<u64>): u64 {
         let i = 0;
         let s = 0;

@@ -1,6 +1,6 @@
 FAUCET_URL=http://0.0.0.0:8081
 REST_URL=http://0.0.0.0:8080
-OWNER=0x908f61f6d70927b6542402c89b0535f286f80922f8f5acbf2c9316675d685bd5
+OWNER=0x567e5f9b66053c3d9eb65d38de538c9c52ca4e1b60220fdeec4c405a9dd0ee1c
 
 init_profiles:
 	aptos init --profile owner --rest-url ${REST_URL} --faucet-url ${FAUCET_URL}
@@ -39,6 +39,10 @@ publish_testnet:
 mint_shovel:
 	aptos move run --function-id ${OWNER}::urn_to_earn::mint_shovel \
 	--sender-account=owner --profile=owner
+	
+wl_mint_shovel:
+	aptos move run --function-id ${OWNER}::urn_to_earn::bayc_wl_mint_shovel \
+	--sender-account=user --profile=user
 
 add_burned:
 	aptos move run --function-id ${OWNER}::urn::add_burned \
@@ -56,9 +60,8 @@ mint_urn_testnet:
 	--sender-account=testnet --profile=testnet
 
 dig:
-	aptos move run-script --assume-yes \
-	--compiled-script-path build/urn/bytecode_scripts/dig.mv \
-	--sender-account=user --profile=user
+	aptos move run --function-id ${OWNER}::urn_to_earn::dig \
+	--sender-account=owner --profile=owner
 
 dig_testnet:
 	aptos move run-script --assume-yes \
@@ -84,16 +87,6 @@ view:
 		"arguments": [] \
 	}'
 
-sum:
-	curl --request POST \
-	--url ${REST_URL}/v1/view \
-	--header 'Content-Type: application/json' \
-	--data '{ \
-		"function": "${OWNER}::whitelist::sum", \
-		"type_arguments": [], \
-		"arguments": [["5", "6"]] \
-	}'
-
 add_wl:
 	aptos move run-script --assume-yes \
         --compiled-script-path build/urn_to_earn/bytecode_scripts/add_to_whitelist.mv \
@@ -104,10 +97,25 @@ add_collection:
         --compiled-script-path build/urn_to_earn/bytecode_scripts/add_collection.mv \
         --sender-account owner --profile=owner \
 
-add_wl_cli:
-	aptos move run-script --assume-yes \
-        --compiled-script-path build/urn_to_earn/bytecode_scripts/add_to_whitelist2.mv \
-        --sender-account owner --profile=owner \
+get_collection_left_quota:
+	curl --request POST \
+	--url ${REST_URL}/v1/view \
+	--header 'Content-Type: application/json' \
+	--data '{ \
+		"function": "${OWNER}::whitelist::get_collection_left_quota", \
+		"type_arguments": [], \
+		"arguments": ["BAYC"] \
+	}'
+
+sum:
+	curl --request POST \
+	--url ${REST_URL}/v1/view \
+	--header 'Content-Type: application/json' \
+	--data '{ \
+		"function": "${OWNER}::whitelist::sum", \
+		"type_arguments": [], \
+		"arguments": [["5", "6"]] \
+	}'
 
 sum2:
 	aptos move run --function-id ${OWNER}::whitelist::sum2 \
