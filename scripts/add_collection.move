@@ -1,6 +1,5 @@
 script {
     use std::string;
-    use std::vector;
 
     fun add_collection(sender: &signer){
         let collection = string::utf8(b"BAYC");

@@ -22,15 +22,15 @@ fund:
 	--profile user --account user --amount 999999999
 
 compile:
-	aptos move compile --skip-fetch-latest-git-deps --bytecode-version 6 --named-addresses owner=owner
+	aptos move compile --bytecode-version 6 --named-addresses owner=${profile}
 
 compile_testnet:
 	aptos move compile --named-addresses owner=testnet
 
 publish:
-	aptos move publish --named-addresses owner=owner \
-	--bytecode-version 6 \
-	--sender-account owner --profile owner
+	aptos move publish --named-addresses owner=${profile} \
+	--bytecode-version=6 --included-artifacts=none \
+	--sender-account ${profile} --profile ${profile}
 
 publish_testnet:
 	aptos move publish --named-addresses owner=testnet \
