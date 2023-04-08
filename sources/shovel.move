@@ -20,7 +20,7 @@ module owner::shovel {
     const EHAS_ALREADY_CLAIMED_MINT: u64 = 2;
     const EMINTING_NOT_ENABLED: u64 = 3;
 
-    const TOKEN_NAME: vector<u8> = b"SHOVEL";
+    const TOKEN_NAME: vector<u8> = b"shovel";
     const TOKEN_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmSioUrHchtStNHXCHSzS8M6HVHDV8dPojgwF4EqpFBtf5/shovel.jpg";
 
     public(friend) fun init_shovel(sender: &signer, resource: &signer, collection_name: String) {

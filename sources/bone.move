@@ -40,7 +40,7 @@ module owner::bone {
     const ENOT_OWN_THIS_TOKEN: u64 = 4;
     const ETOKEN_PROP_MISMATCH: u64 = 5;
 
-    const TOKEN_NAME: vector<u8> = b"BONE";
+    const TOKEN_NAME: vector<u8> = b"bone";
     const TOKEN_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmSioUrHchtStNHXCHSzS8M6HVHDV8dPojgwF4EqpFBtf5/urn.jpg";
 
     const SKULL_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmSioUrHchtStNHXCHSzS8M6HVHDV8dPojgwF4EqpFBtf5/skull.jpg";
@@ -53,6 +53,10 @@ module owner::bone {
     const GOLDEN_HIP_URL: vector<u8> = b"https://";
     const GOLDEN_LEG_URL: vector<u8> = b"https://";
     const GOLDEN_ARM_URL: vector<u8> = b"https://";
+
+    const POINT_PROP_NAME: vector<u8> = b"point";
+    const MATERIAL_PROP_NAME: vector<u8> = b"material";
+    const PART_PROP_NAME: vector<u8> = b"part";
 
     public(friend) fun init_bone(
         sender: &signer,
@@ -129,9 +133,9 @@ module owner::bone {
         };
 
         let default_keys = vector<String>[
-            string::utf8(b"PART"), 
-            string::utf8(b"MATERIAL"), 
-            string::utf8(b"POINT"), 
+            string::utf8(PART_PROP_NAME), 
+            string::utf8(MATERIAL_PROP_NAME), 
+            string::utf8(POINT_PROP_NAME), 
             string::utf8(BURNABLE_BY_OWNER)
         ];
         let default_vals = vector<vector<u8>>[
@@ -186,7 +190,7 @@ module owner::bone {
 
         // rand point
         let point = rand_u8_range(&signer_addr, 0, 100);
-        let keys = vector<String>[string::utf8(b"POINT")];
+        let keys = vector<String>[string::utf8(POINT_PROP_NAME)];
         let vals = vector<vector<u8>>[bcs::to_bytes<u8>(&point)];
         let types = vector<String>[string::utf8(b"u8")];
         
@@ -224,7 +228,7 @@ module owner::bone {
         // rand point
         let point = rand_u8_range(&signer_addr, 0, 100);
         let keys = vector<String>[
-            string::utf8(b"POINT"), 
+            string::utf8(POINT_PROP_NAME), 
             ];
         let vals = vector<vector<u8>>[
             bcs::to_bytes<u8>(&point), 
@@ -281,7 +285,7 @@ module owner::bone {
         let balance = token::balance_of(token_owner, token_id);
         assert!(balance != 0, ENOT_OWN_THIS_TOKEN);
         let properties = token::get_property_map(token_owner, token_id);
-        let point = property_map::read_u8(&properties, &string::utf8(b"POINT"));
+        let point = property_map::read_u8(&properties, &string::utf8(POINT_PROP_NAME));
         point
     }
 
@@ -289,7 +293,7 @@ module owner::bone {
         let balance = token::balance_of(token_owner, token_id);
         assert!(balance != 0, ENOT_OWN_THIS_TOKEN);
         let properties = token::get_property_map(token_owner, token_id);
-        let material = property_map::read_string(&properties, &string::utf8(b"MATERIAL"));
+        let material = property_map::read_string(&properties, &string::utf8(MATERIAL_PROP_NAME));
         material
     }
 
@@ -329,7 +333,7 @@ module owner::bone {
         let token_id = token::mint_token(resource, boneMinter.skull_token_data_id, 1);
     
         // rand point
-        let keys = vector<String>[string::utf8(b"POINT")];
+        let keys = vector<String>[string::utf8(POINT_PROP_NAME)];
         let vals = vector<vector<u8>>[bcs::to_bytes<u8>(&50)];
         let types = vector<String>[string::utf8(b"u8")];
         

@@ -49,6 +49,7 @@ module owner::urn {
 
     const URN_TOKEN_NAME: vector<u8> = b"urn";
     const GOLDEN_URN_TOKEN_NAME: vector<u8> = b"golden_urn";
+    const ASH_PROP_NAME: vector<u8> = b"ash";
     const URN_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmSioUrHchtStNHXCHSzS8M6HVHDV8dPojgwF4EqpFBtf5/urn.jpg";
     const GOLDEN_URN_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmSioUrHchtStNHXCHSzS8M6HVHDV8dPojgwF4EqpFBtf5/golden_urn.jpg";
 
@@ -102,7 +103,7 @@ module owner::urn {
         let token_mutate_config = token::create_token_mutability_config(
             &vector<bool>[ true, true, true, true, true ]); // max, uri, royalty, description, property
         let default_keys = vector<String>[
-            string::utf8(b"TYPE"), string::utf8(b"ASH"), string::utf8(BURNABLE_BY_OWNER)
+            string::utf8(b"TYPE"), string::utf8(ASH_PROP_NAME), string::utf8(BURNABLE_BY_OWNER)
         ];
         let default_vals = vector<vector<u8>>[
             bcs::to_bytes<string::String>(&tokendata_name), bcs::to_bytes<u8>(&0), bcs::to_bytes<bool>(&true)
@@ -166,7 +167,7 @@ module owner::urn {
         let balance = token::balance_of(token_owner, token_id);
         assert!(balance != 0, ENOT_OWN_THIS_TOKEN);
         let properties = token::get_property_map(token_owner, token_id);
-        let fullness = property_map::read_u8(&properties, &string::utf8(b"ASH"));
+        let fullness = property_map::read_u8(&properties, &string::utf8(ASH_PROP_NAME));
         fullness
     }
 
@@ -188,7 +189,7 @@ module owner::urn {
         fillness = fillness + amount;
         assert!(fillness <= 100, EURN_OVERFLOW);
 
-        let keys = vector<String>[string::utf8(b"ASH")];
+        let keys = vector<String>[string::utf8(ASH_PROP_NAME)];
         let vals = vector<vector<u8>>[bcs::to_bytes<u8>(&fillness)];
         let types = vector<String>[string::utf8(b"u8")];
 
@@ -211,7 +212,7 @@ module owner::urn {
         let robbed = rand_u8_range_no_sender(0, fillness); // TODO: how much ash to rob?
         fillness = fillness - robbed;
 
-        let keys = vector<String>[string::utf8(b"ASH")];
+        let keys = vector<String>[string::utf8(ASH_PROP_NAME)];
         let vals = vector<vector<u8>>[bcs::to_bytes<u8>(&fillness)];
         let types = vector<String>[string::utf8(b"u8")];
 

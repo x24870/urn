@@ -21,7 +21,7 @@ module owner::shard {
     const EMINTING_NOT_ENABLED: u64 = 3;
     const EINSUFFICIENT_BALANCE: u64 = 4;
 
-    const TOKEN_NAME: vector<u8> = b"SHARD";
+    const TOKEN_NAME: vector<u8> = b"shard";
     const TOKEN_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmSioUrHchtStNHXCHSzS8M6HVHDV8dPojgwF4EqpFBtf5/shard.jpg";
 
     public(friend) fun init_shard(sender: &signer, resource: &signer, collection_name: String) {
