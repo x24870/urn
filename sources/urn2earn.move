@@ -223,8 +223,8 @@ module owner::urn_to_earn {
     use owner::pseudorandom;
     #[test_only]
     use aptos_framework::genesis;
-    #[test_only]
-    use aptos_framework::debug;
+    // #[test_only]
+    // use aptos_framework::debug;
     #[test_only]
     use aptos_framework::option;
     #[test_only]
@@ -337,7 +337,7 @@ module owner::urn_to_earn {
         assert!(token::balance_of(user_addr, bone_token_id) == 1, EINSUFFICIENT_BALANCE);
 
         let point = bone::get_bone_point(bone_token_id, user_addr);
-        debug::print(&point);
+        // debug::print(&point);
 
         // test burn bone and fill urn
         urn_token_id = burn_and_fill_internal(user, urn_token_id, bone_token_id);
@@ -349,8 +349,8 @@ module owner::urn_to_earn {
         let golden_bone_token_id = bone::mint_golden_bone(user, &resource);
         token::transfer(&resource, golden_bone_token_id, user_addr, 1);
         assert!(token::balance_of(user_addr, golden_bone_token_id) == 1, EINSUFFICIENT_BALANCE);
-        let point = bone::get_bone_point(golden_bone_token_id, user_addr);
-        debug::print(&point);
+        // let point = bone::get_bone_point(golden_bone_token_id, user_addr);
+        // debug::print(&point);
         bone::is_golden_bone(golden_bone_token_id, user_addr);
     }
 
@@ -555,6 +555,6 @@ module owner::urn_to_earn {
         assert!(urn::get_ash_fullness(user_urn, user_addr)+amount==50, ETOKEN_PROP_MISMATCH);
         assert!(urn::get_ash_fullness(robber_urn, robber_addr)==amount, ETOKEN_PROP_MISMATCH);
         assert!(!knife::contains_victim(user_addr), ETEST_ERROR);
-        debug::print(&amount);
+        // debug::print(&amount);
     }
 }
