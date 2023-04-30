@@ -34,8 +34,8 @@ module owner::urn_to_earn {
 
     const COLLECTION_NAME: vector<u8> = b"URN";
 
-    const SHOEVEL_PRICE: u64 = 10000000; // 0.1 APT
-    const URN_PRICE: u64 = 100000000; // 1 APT
+    const SHOEVEL_PRICE: u64 = 100000; // 0.001 APT
+    const URN_PRICE: u64 = 1000000; // 0.01 APT
 
     fun init_module(sender: &signer) {
         // Don't run setup more than once
