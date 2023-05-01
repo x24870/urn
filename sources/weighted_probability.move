@@ -8,6 +8,8 @@ module owner::weighted_probability {
     use owner::knife;
     use owner::pseudorandom::{rand_u64_range};
 
+    friend owner::urn_to_earn;
+
     // error codes
     const EINVALID_MINT_TYPE: u64 = 1;
 
@@ -126,7 +128,7 @@ module owner::weighted_probability {
     }
 
     
-    fun mint_by_weight(
+    public(friend) fun mint_by_weight(
         sign: &signer,
         resource: &signer,
     ): TokenId acquires AccumulateWeight {

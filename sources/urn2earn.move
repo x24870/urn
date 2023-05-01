@@ -12,7 +12,7 @@ module owner::urn_to_earn {
     use owner::shard;
     use owner::knife;
     use owner::whitelist;
-    // use owner::weighted_probability;
+    use owner::weighted_probability;
 
     struct UrnToEarnConfig has key {
         description: String,
@@ -61,8 +61,9 @@ module owner::urn_to_earn {
         bone::init_bone(sender, &resource, name);
         shard::init_shard(sender, &resource, name);
         knife::init_knife(sender, &resource, name);
-        // setup whitelist module
+        // setup helper modules
         whitelist::init_whitelist_config(sender);
+        weighted_probability::init_weighted_probability(sender);
 
         move_to(sender, UrnToEarnConfig {
             description: description,
@@ -557,5 +558,29 @@ module owner::urn_to_earn {
         assert!(urn::get_ash_fullness(robber_urn, robber_addr)==amount, ETOKEN_PROP_MISMATCH);
         assert!(!knife::contains_victim(user_addr), ETEST_ERROR);
         // debug::print(&amount);
+    }
+
+
+    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b, robber=@0x0bb3)]
+    public fun test_mint_by_weight(
+        aptos_framework: &signer, owner: &signer, user: &signer, robber: &signer
+    ) acquires UrnToEarnConfig {
+        init_for_test(aptos_framework, owner, user, robber);
+        let user_addr = signer::address_of(user);
+        let resource = get_resource_account();
+
+        // test mint by weight
+        let i = 0;
+        while (i < 100) { // Iterate until first cutoff:
+            let token_id = weighted_probability::mint_by_weight(user, &resource);
+            token::transfer(&resource, token_id, user_addr, 1);
+            i = i + 1;
+        };
+
+        let knife_token_id = knife::mint(user, &resource);
+        let shard_token_id = shard::mint(user, &resource);
+
+        assert!(token::balance_of(user_addr, knife_token_id) > 15, EINSUFFICIENT_BALANCE);
+        assert!(token::balance_of(user_addr, shard_token_id) > 20, EINSUFFICIENT_BALANCE);
     }
 }
