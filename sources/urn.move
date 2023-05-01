@@ -330,9 +330,4 @@ module owner::urn {
 
         return 0
     }
-
-    #[view]
-    public fun test():u8 {
-        return 5
-    }
 }

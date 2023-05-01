@@ -12,6 +12,7 @@ module owner::urn_to_earn {
     use owner::shard;
     use owner::knife;
     use owner::whitelist;
+    // use owner::weighted_probability;
 
     struct UrnToEarnConfig has key {
         description: String,
@@ -123,23 +124,23 @@ module owner::urn_to_earn {
         token_id
     }
 
-    public entry fun mint_bone(sign: &signer) acquires UrnToEarnConfig {
-        let resource = get_resource_account();
-        let token_id = bone::mint(sign, &resource);
-        token::initialize_token_store(sign);
-        token::opt_in_direct_transfer(sign, true);
-        let sender = signer::address_of(sign);
-        token::transfer(&resource, token_id, sender, 1);
-    }
+    // public entry fun mint_bone(sign: &signer) acquires UrnToEarnConfig {
+    //     let resource = get_resource_account();
+    //     let token_id = bone::mint(sign, &resource);
+    //     token::initialize_token_store(sign);
+    //     token::opt_in_direct_transfer(sign, true);
+    //     let sender = signer::address_of(sign);
+    //     token::transfer(&resource, token_id, sender, 1);
+    // }
 
-    public entry fun mint_golden_bone(sign: &signer) acquires UrnToEarnConfig {
-        let resource = get_resource_account();
-        let token_id = bone::mint_golden_bone(sign, &resource);
-        token::initialize_token_store(sign);
-        token::opt_in_direct_transfer(sign, true);
-        let sender = signer::address_of(sign);
-        token::transfer(&resource, token_id, sender, 1);
-    }
+    // public entry fun mint_golden_bone(sign: &signer) acquires UrnToEarnConfig {
+    //     let resource = get_resource_account();
+    //     let token_id = bone::mint_golden_bone(sign, &resource);
+    //     token::initialize_token_store(sign);
+    //     token::opt_in_direct_transfer(sign, true);
+    //     let sender = signer::address_of(sign);
+    //     token::transfer(&resource, token_id, sender, 1);
+    // }
 
     public fun burn_and_fill(
         sign: &signer, bone_token_id: TokenId, urn_token_id: TokenId

@@ -12,6 +12,7 @@ module owner::bone {
     const BURNABLE_BY_OWNER: vector<u8> = b"TOKEN_BURNABLE_BY_OWNER";
 
     friend owner::urn_to_earn;
+    friend owner::weighted_probability;
 
     struct MintEvent has store, drop {
         minter: address,
@@ -39,6 +40,7 @@ module owner::bone {
     const EMINTING_NOT_ENABLED: u64 = 3;
     const ENOT_OWN_THIS_TOKEN: u64 = 4;
     const ETOKEN_PROP_MISMATCH: u64 = 5;
+    const EINVALID_BONE_PART: u64 = 6;
 
     const TOKEN_NAME: vector<u8> = b"bone";
     const TOKEN_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmSioUrHchtStNHXCHSzS8M6HVHDV8dPojgwF4EqpFBtf5/urn.jpg";
@@ -48,8 +50,8 @@ module owner::bone {
     const HIP_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmSioUrHchtStNHXCHSzS8M6HVHDV8dPojgwF4EqpFBtf5/hip.jpg";
     const LEG_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmSioUrHchtStNHXCHSzS8M6HVHDV8dPojgwF4EqpFBtf5/leg.jpg";
     const ARM_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmSioUrHchtStNHXCHSzS8M6HVHDV8dPojgwF4EqpFBtf5/hand.jpg";
-    const GOLDEN_SKULL_URL: vector<u8> = b"https://";
-    const GOLDEN_CHEST_URL: vector<u8> = b"https://";
+    const GOLDEN_SKULL_URL: vector<u8> = b"https://"; // TODO: update all urls
+    const GOLDEN_CHEST_URL: vector<u8> = b"https://"; 
     const GOLDEN_HIP_URL: vector<u8> = b"https://";
     const GOLDEN_LEG_URL: vector<u8> = b"https://";
     const GOLDEN_ARM_URL: vector<u8> = b"https://";
@@ -57,6 +59,17 @@ module owner::bone {
     const POINT_PROP_NAME: vector<u8> = b"point";
     const MATERIAL_PROP_NAME: vector<u8> = b"material";
     const PART_PROP_NAME: vector<u8> = b"part";
+
+    const SKULL: vector<u8> =   b"skull";
+    const CHEST: vector<u8> =   b"chest";
+    const HIP: vector<u8> =     b"hip";
+    const LEG: vector<u8> =     b"leg";
+    const ARM: vector<u8> =     b"arm";
+    const G_SKULL: vector<u8> = b"golden skull";
+    const G_CHEST: vector<u8> = b"golden chest";
+    const G_HIP: vector<u8> =   b"golden hip";
+    const G_LEG: vector<u8> =   b"golden leg";
+    const G_ARM: vector<u8> =   b"golden arm";
 
     public(friend) fun init_bone(
         sender: &signer,
@@ -72,26 +85,26 @@ module owner::bone {
 
         // create bone token data
         let skull_token_data_id = create_bone_token_data(
-            resource, collection_name, string::utf8(b"skull"), string::utf8(SKULL_URL), !is_golden);
+            resource, collection_name, string::utf8(SKULL), string::utf8(SKULL_URL), !is_golden);
         let chest_token_data_id = create_bone_token_data(
-            resource, collection_name, string::utf8(b"chest"), string::utf8(CHEST_URL), !is_golden);
+            resource, collection_name, string::utf8(CHEST), string::utf8(CHEST_URL), !is_golden);
         let hip_token_data_id = create_bone_token_data(
-            resource, collection_name, string::utf8(b"hip"), string::utf8(HIP_URL), !is_golden);
+            resource, collection_name, string::utf8(HIP), string::utf8(HIP_URL), !is_golden);
         let leg_token_data_id = create_bone_token_data(
-            resource, collection_name, string::utf8(b"leg"), string::utf8(LEG_URL), !is_golden);
+            resource, collection_name, string::utf8(LEG), string::utf8(LEG_URL), !is_golden);
         let arm_token_data_id = create_bone_token_data(
-            resource, collection_name, string::utf8(b"arm"), string::utf8(ARM_URL), !is_golden);
+            resource, collection_name, string::utf8(ARM), string::utf8(ARM_URL), !is_golden);
         // create golden bone token data
         let golden_skull_token_data_id = create_bone_token_data(
-            resource, collection_name, string::utf8(b"golden skull"), string::utf8(GOLDEN_SKULL_URL), is_golden);
+            resource, collection_name, string::utf8(G_SKULL), string::utf8(GOLDEN_SKULL_URL), is_golden);
         let golden_chest_token_data_id = create_bone_token_data(
-            resource, collection_name, string::utf8(b"golden chest"), string::utf8(GOLDEN_CHEST_URL), is_golden);
+            resource, collection_name, string::utf8(G_CHEST), string::utf8(GOLDEN_CHEST_URL), is_golden);
         let golden_hip_token_data_id = create_bone_token_data(
-            resource, collection_name, string::utf8(b"golden hip"), string::utf8(GOLDEN_HIP_URL), is_golden);
+            resource, collection_name, string::utf8(G_HIP), string::utf8(GOLDEN_HIP_URL), is_golden);
         let golden_leg_token_data_id = create_bone_token_data(
-            resource, collection_name, string::utf8(b"golden leg"), string::utf8(GOLDEN_LEG_URL), is_golden);
+            resource, collection_name, string::utf8(G_LEG), string::utf8(GOLDEN_LEG_URL), is_golden);
         let golden_arm_token_data_id = create_bone_token_data(
-            resource, collection_name, string::utf8(b"golden arm"), string::utf8(GOLDEN_ARM_URL), is_golden);
+            resource, collection_name, string::utf8(G_ARM), string::utf8(GOLDEN_ARM_URL), is_golden);
 
         move_to(sender, BoneMinter {
             res_acct_addr: signer::address_of(resource),
@@ -206,6 +219,46 @@ module owner::bone {
         token_id
     }
 
+    // mint bone or golden bone
+    public(friend) fun mint_bone(
+        sign: &signer,
+        resource: &signer,
+        point: u8,
+        part: String,
+    ): TokenId acquires BoneMinter {
+        let boneMinter = borrow_global_mut<BoneMinter>(@owner);
+        let amount = 1;
+        let signer_addr = signer::address_of(sign);
+
+        // let token_data_id = rand_bone(&signer_addr, boneMinter);
+        let token_data_id = get_bone_token_data_id(part, boneMinter);
+        let token_id = token::mint_token(resource, token_data_id, amount);
+    
+        // emit mint bone event
+        event::emit_event<MintEvent>(
+            &mut boneMinter.mint_event,
+            MintEvent {
+                minter: signer_addr,
+            }
+        );
+
+        // rand point
+        let keys = vector<String>[string::utf8(POINT_PROP_NAME)];
+        let vals = vector<vector<u8>>[bcs::to_bytes<u8>(&point)];
+        let types = vector<String>[string::utf8(b"u8")];
+        
+        token_id = token::mutate_one_token(
+            resource, 
+            signer::address_of(resource), // token haven't transfered
+            token_id,
+            keys,
+            vals,
+            types
+        );
+
+        token_id
+    }
+
     public(friend) fun mint_golden_bone(
         sign: &signer,
         resource: &signer,
@@ -262,6 +315,32 @@ module owner::bone {
             return bm.chest_token_data_id
         } else {
             return bm.skull_token_data_id
+        }
+    }
+
+    fun get_bone_token_data_id(part: String, bm: &mut BoneMinter): token::TokenDataId {
+        if (part == string::utf8(ARM)) {
+            return bm.arm_token_data_id
+        } else if (part == string::utf8(LEG)) {
+            return bm.leg_token_data_id
+        } else if (part == string::utf8(HIP)) {
+            return bm.hip_token_data_id
+        } else if (part == string::utf8(CHEST)) {
+            return bm.chest_token_data_id
+        } else if (part == string::utf8(SKULL)) {
+            return bm.skull_token_data_id
+        } else if (part == string::utf8(G_ARM)) {
+            return bm.golden_arm_token_data_id
+        } else if (part == string::utf8(G_LEG)) {
+            return bm.golden_leg_token_data_id
+        } else if (part == string::utf8(G_HIP)) {
+            return bm.golden_hip_token_data_id
+        } else if (part == string::utf8(G_CHEST)) {
+            return bm.golden_chest_token_data_id
+        } else if (part == string::utf8(G_SKULL)) {
+            return bm.golden_skull_token_data_id
+        } else {
+            abort EINVALID_BONE_PART
         }
     }
 

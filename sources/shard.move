@@ -8,6 +8,7 @@ module owner::shard {
     const BURNABLE_BY_OWNER: vector<u8> = b"TOKEN_BURNABLE_BY_OWNER";
 
     friend owner::urn_to_earn;
+    friend owner::weighted_probability;
 
     struct ShardMinter has store, key {
         res_acct_addr: address,
