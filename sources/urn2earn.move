@@ -397,7 +397,7 @@ module owner::urn_to_earn {
         let resource = get_resource_account();
 
         // forge golden urn
-        let token_id = shard::mint(user, &resource); // 1
+        let shard_token_id = shard::mint(user, &resource); // 1
         shard::mint(user, &resource); // 2
         shard::mint(user, &resource); // 3
         shard::mint(user, &resource); // 4
@@ -407,19 +407,19 @@ module owner::urn_to_earn {
         shard::mint(user, &resource); // 8
         shard::mint(user, &resource); // 9
         shard::mint(user, &resource); // 10
-        token::transfer(&resource, token_id, user_addr, 10);
-        assert!(token::balance_of(user_addr, token_id) == 10, EINSUFFICIENT_BALANCE);
+        token::transfer(&resource, shard_token_id, user_addr, 10);
+        assert!(token::balance_of(user_addr, shard_token_id) == 10, EINSUFFICIENT_BALANCE);
 
         let golden_urn_token_id = forge_internal(user);
-        assert!(token::balance_of(user_addr, token_id) == 0, EINSUFFICIENT_BALANCE);
+        assert!(token::balance_of(user_addr, shard_token_id) == 0, EINSUFFICIENT_BALANCE);
         assert!(token::balance_of(user_addr, golden_urn_token_id) == 1, EINSUFFICIENT_BALANCE);
 
-        // test mint golden bone
+        // mint bone
         let bone_token_id = bone::mint_bone(user, &resource);
         token::transfer(&resource, bone_token_id, user_addr, 1);
         assert!(token::balance_of(user_addr, bone_token_id) == 1, EINSUFFICIENT_BALANCE);
-        // assert!(bone::is_golden_bone(bone_token_id, user_addr), EINSUFFICIENT_BALANCE);
 
+        // try to put bone into golden urn
         _ = burn_and_fill_internal(user, golden_urn_token_id, bone_token_id);
     }
 
