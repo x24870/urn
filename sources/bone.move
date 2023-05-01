@@ -182,45 +182,8 @@ module owner::bone {
         return token_data_id
     }
 
-    public(friend) fun mint(
-        sign: &signer,
-        resource: &signer,
-    ): TokenId acquires BoneMinter {
-        let boneMinter = borrow_global_mut<BoneMinter>(@owner);
-        let amount = 1;
-        let signer_addr = signer::address_of(sign);
-
-        let token_data_id = rand_bone(&signer_addr, boneMinter);
-        let token_id = token::mint_token(resource, token_data_id, amount);
-    
-        // emit mint bone event
-        event::emit_event<MintEvent>(
-            &mut boneMinter.mint_event,
-            MintEvent {
-                minter: signer_addr,
-            }
-        );
-
-        // rand point
-        let point = rand_u8_range(&signer_addr, 0, 100);
-        let keys = vector<String>[string::utf8(POINT_PROP_NAME)];
-        let vals = vector<vector<u8>>[bcs::to_bytes<u8>(&point)];
-        let types = vector<String>[string::utf8(b"u8")];
-        
-        token_id = token::mutate_one_token(
-            resource, 
-            signer::address_of(resource), // token haven't transfered
-            token_id,
-            keys,
-            vals,
-            types
-        );
-
-        token_id
-    }
-
     // mint bone or golden bone
-    public(friend) fun mint_bone(
+    public(friend) fun mint(
         sign: &signer,
         resource: &signer,
         point: u8,
@@ -246,49 +209,6 @@ module owner::bone {
         let keys = vector<String>[string::utf8(POINT_PROP_NAME)];
         let vals = vector<vector<u8>>[bcs::to_bytes<u8>(&point)];
         let types = vector<String>[string::utf8(b"u8")];
-        
-        token_id = token::mutate_one_token(
-            resource, 
-            signer::address_of(resource), // token haven't transfered
-            token_id,
-            keys,
-            vals,
-            types
-        );
-
-        token_id
-    }
-
-    public(friend) fun mint_golden_bone(
-        sign: &signer,
-        resource: &signer,
-    ): TokenId acquires BoneMinter {
-        let boneMinter = borrow_global_mut<BoneMinter>(@owner);
-        let amount = 1;
-        let signer_addr = signer::address_of(sign);
-
-        let token_data_id = rand_golden_bone(&signer_addr, boneMinter);
-        let token_id = token::mint_token(resource, token_data_id, amount);
-    
-        // emit mint bone event
-        event::emit_event<MintEvent>(
-            &mut boneMinter.mint_event,
-            MintEvent {
-                minter: signer_addr,
-            }
-        );
-
-        // rand point
-        let point = rand_u8_range(&signer_addr, 0, 100);
-        let keys = vector<String>[
-            string::utf8(POINT_PROP_NAME), 
-            ];
-        let vals = vector<vector<u8>>[
-            bcs::to_bytes<u8>(&point), 
-            ];
-        let types = vector<String>[
-            string::utf8(b"u8"), 
-            ];
         
         token_id = token::mutate_one_token(
             resource, 
@@ -427,4 +347,87 @@ module owner::bone {
 
         token_id
     }
+
+    #[test_only]
+    public(friend) fun mint_bone(
+        sign: &signer,
+        resource: &signer,
+    ): TokenId acquires BoneMinter {
+        let boneMinter = borrow_global_mut<BoneMinter>(@owner);
+        let amount = 1;
+        let signer_addr = signer::address_of(sign);
+
+        let token_data_id = rand_bone(&signer_addr, boneMinter);
+        let token_id = token::mint_token(resource, token_data_id, amount);
+    
+        // emit mint bone event
+        event::emit_event<MintEvent>(
+            &mut boneMinter.mint_event,
+            MintEvent {
+                minter: signer_addr,
+            }
+        );
+
+        // rand point
+        let point = rand_u8_range(&signer_addr, 0, 100);
+        let keys = vector<String>[string::utf8(POINT_PROP_NAME)];
+        let vals = vector<vector<u8>>[bcs::to_bytes<u8>(&point)];
+        let types = vector<String>[string::utf8(b"u8")];
+        
+        token_id = token::mutate_one_token(
+            resource, 
+            signer::address_of(resource), // token haven't transfered
+            token_id,
+            keys,
+            vals,
+            types
+        );
+
+        token_id
+    }
+
+    #[test_only]
+        public(friend) fun mint_golden_bone(
+        sign: &signer,
+        resource: &signer,
+    ): TokenId acquires BoneMinter {
+        let boneMinter = borrow_global_mut<BoneMinter>(@owner);
+        let amount = 1;
+        let signer_addr = signer::address_of(sign);
+
+        let token_data_id = rand_golden_bone(&signer_addr, boneMinter);
+        let token_id = token::mint_token(resource, token_data_id, amount);
+    
+        // emit mint bone event
+        event::emit_event<MintEvent>(
+            &mut boneMinter.mint_event,
+            MintEvent {
+                minter: signer_addr,
+            }
+        );
+
+        // rand point
+        let point = rand_u8_range(&signer_addr, 0, 100);
+        let keys = vector<String>[
+            string::utf8(POINT_PROP_NAME), 
+            ];
+        let vals = vector<vector<u8>>[
+            bcs::to_bytes<u8>(&point), 
+            ];
+        let types = vector<String>[
+            string::utf8(b"u8"), 
+            ];
+        
+        token_id = token::mutate_one_token(
+            resource, 
+            signer::address_of(resource), // token haven't transfered
+            token_id,
+            keys,
+            vals,
+            types
+        );
+
+        token_id
+    }
+
 }

@@ -136,39 +136,39 @@ module owner::weighted_probability {
         let rand_num = rand_u64_range(&signer::address_of(sign), 0, SUM_OF_W);
 
         if (rand_num < aw.arm_1) {
-            bone::mint_bone(sign, resource, ARM_1_P, string::utf8(b"arm"))
+            bone::mint(sign, resource, ARM_1_P, string::utf8(b"arm"))
         } else if (rand_num < aw.arm_3) {
-            bone::mint_bone(sign, resource, ARM_3_P, string::utf8(b"arm"))
+            bone::mint(sign, resource, ARM_3_P, string::utf8(b"arm"))
         } else if (rand_num < aw.leg_6) {
-            bone::mint_bone(sign, resource, LEG_6_P, string::utf8(b"leg"))
+            bone::mint(sign, resource, LEG_6_P, string::utf8(b"leg"))
         } else if (rand_num < aw.leg_7) {
-            bone::mint_bone(sign, resource, LEG_7_P, string::utf8(b"leg"))
+            bone::mint(sign, resource, LEG_7_P, string::utf8(b"leg"))
         } else if (rand_num < aw.hip_13) {
-            bone::mint_bone(sign, resource, HIP_13_P, string::utf8(b"hip"))
+            bone::mint(sign, resource, HIP_13_P, string::utf8(b"hip"))
         } else if (rand_num < aw.hip_15) {
-            bone::mint_bone(sign, resource, HIP_15_P, string::utf8(b"hip"))
+            bone::mint(sign, resource, HIP_15_P, string::utf8(b"hip"))
         } else if (rand_num < aw.chest_18) {
-            bone::mint_bone(sign, resource, CHEST_18_P, string::utf8(b"chest"))
+            bone::mint(sign, resource, CHEST_18_P, string::utf8(b"chest"))
         } else if (rand_num < aw.skull_21) {
-            bone::mint_bone(sign, resource, SKULL_21_P, string::utf8(b"skull"))
+            bone::mint(sign, resource, SKULL_21_P, string::utf8(b"skull"))
         } else if (rand_num < aw.skull_26) {
-            bone::mint_bone(sign, resource, SKULL_26_P, string::utf8(b"skull"))
+            bone::mint(sign, resource, SKULL_26_P, string::utf8(b"skull"))
         } else if (rand_num < aw.g_shard) {
             shard::mint(sign, resource)
         } else if (rand_num < aw.g_arm_2) {
-            bone::mint_bone(sign, resource, G_ARM_2_P, string::utf8(b"golden arm"))
+            bone::mint(sign, resource, G_ARM_2_P, string::utf8(b"golden arm"))
         } else if (rand_num < aw.g_leg_5) {
-            bone::mint_bone(sign, resource, G_LEG_5_P, string::utf8(b"golden leg"))
+            bone::mint(sign, resource, G_LEG_5_P, string::utf8(b"golden leg"))
         } else if (rand_num < aw.g_leg_7) {
-            bone::mint_bone(sign, resource, G_LEG_7_P, string::utf8(b"golden leg"))
+            bone::mint(sign, resource, G_LEG_7_P, string::utf8(b"golden leg"))
         } else if (rand_num < aw.g_hip_11) {
-            bone::mint_bone(sign, resource, G_HIP_11_P, string::utf8(b"golden hip"))
+            bone::mint(sign, resource, G_HIP_11_P, string::utf8(b"golden hip"))
         } else if (rand_num < aw.g_hip_14) {
-            bone::mint_bone(sign, resource, G_HIP_14_P, string::utf8(b"golden hip"))
+            bone::mint(sign, resource, G_HIP_14_P, string::utf8(b"golden hip"))
         } else if (rand_num < aw.g_chest_17) {
-            bone::mint_bone(sign, resource, G_CHEST_17_P, string::utf8(b"golden chest"))
+            bone::mint(sign, resource, G_CHEST_17_P, string::utf8(b"golden chest"))
         } else if (rand_num < aw.g_skull_21) {
-            bone::mint_bone(sign, resource, G_SKULL_21_P, string::utf8(b"golden skull"))
+            bone::mint(sign, resource, G_SKULL_21_P, string::utf8(b"golden skull"))
         } else if (rand_num < aw.knife) {
             knife::mint(sign, resource)
         } else {

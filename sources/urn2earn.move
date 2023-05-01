@@ -125,24 +125,6 @@ module owner::urn_to_earn {
         token_id
     }
 
-    // public entry fun mint_bone(sign: &signer) acquires UrnToEarnConfig {
-    //     let resource = get_resource_account();
-    //     let token_id = bone::mint(sign, &resource);
-    //     token::initialize_token_store(sign);
-    //     token::opt_in_direct_transfer(sign, true);
-    //     let sender = signer::address_of(sign);
-    //     token::transfer(&resource, token_id, sender, 1);
-    // }
-
-    // public entry fun mint_golden_bone(sign: &signer) acquires UrnToEarnConfig {
-    //     let resource = get_resource_account();
-    //     let token_id = bone::mint_golden_bone(sign, &resource);
-    //     token::initialize_token_store(sign);
-    //     token::opt_in_direct_transfer(sign, true);
-    //     let sender = signer::address_of(sign);
-    //     token::transfer(&resource, token_id, sender, 1);
-    // }
-
     public fun burn_and_fill(
         sign: &signer, bone_token_id: TokenId, urn_token_id: TokenId
     ) acquires UrnToEarnConfig {
@@ -188,14 +170,14 @@ module owner::urn_to_earn {
         // TODO: check shovel balance > 0
         shovel::destroy_shovel(sign);
         let resource = get_resource_account();
-        let bone_token_id = bone::mint(sign, &resource);
+        let token_id = weighted_probability::mint_by_weight(sign, &resource);
         token::initialize_token_store(sign);
         token::opt_in_direct_transfer(sign, true);
         token::transfer(
-            &resource, bone_token_id, signer::address_of(sign), 1
+            &resource, token_id, signer::address_of(sign), 1
             );
 
-        bone_token_id
+        token_id
     }
 
     public entry fun forge(sign: &signer) acquires UrnToEarnConfig {
@@ -334,7 +316,7 @@ module owner::urn_to_earn {
         token::transfer(&resource, urn_token_id, user_addr, 1);
 
         // test mint bone
-        let bone_token_id = bone::mint(user, &resource);
+        let bone_token_id = bone::mint_bone(user, &resource);
         token::transfer(&resource, bone_token_id, user_addr, 1);
         assert!(token::balance_of(user_addr, bone_token_id) == 1, EINSUFFICIENT_BALANCE);
 
@@ -433,10 +415,10 @@ module owner::urn_to_earn {
         assert!(token::balance_of(user_addr, golden_urn_token_id) == 1, EINSUFFICIENT_BALANCE);
 
         // test mint golden bone
-        let bone_token_id = bone::mint(user, &resource);
+        let bone_token_id = bone::mint_bone(user, &resource);
         token::transfer(&resource, bone_token_id, user_addr, 1);
         assert!(token::balance_of(user_addr, bone_token_id) == 1, EINSUFFICIENT_BALANCE);
-        bone::is_golden_bone(bone_token_id, user_addr);
+        // assert!(bone::is_golden_bone(bone_token_id, user_addr), EINSUFFICIENT_BALANCE);
 
         _ = burn_and_fill_internal(user, golden_urn_token_id, bone_token_id);
     }
