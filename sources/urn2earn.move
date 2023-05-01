@@ -23,13 +23,14 @@ module owner::urn_to_earn {
         cap: account::SignerCapability,
     }
 
-    const ENOT_AUTHORIZED:           u64 = 1;
-    const EHAS_ALREADY_CLAIMED_MINT: u64 = 2;
-    const EMINTING_NOT_ENABLED:      u64 = 3;
-    const EINSUFFICIENT_BALANCE:     u64 = 4;
-    const ETOKEN_PROP_MISMATCH:      u64 = 5;
-    const ETEST_ERROR:               u64 = 6;
-    const EWL_QUOTA_OUT:             u64 = 7;
+    const ENOT_AUTHORIZED:               u64 = 1;
+    const EHAS_ALREADY_CLAIMED_MINT:     u64 = 2;
+    const EMINTING_NOT_ENABLED:          u64 = 3;
+    const EINSUFFICIENT_BALANCE:         u64 = 4;
+    const ETOKEN_PROP_MISMATCH:          u64 = 5;
+    const ETEST_ERROR:                   u64 = 6;
+    const EWL_QUOTA_OUT:                 u64 = 7;
+    const EAPT_BALANCE_INCONSISTENT:     u64 = 8;
 
     const MAX_U64: u64 = 18446744073709551615;
 
@@ -212,7 +213,7 @@ module owner::urn_to_earn {
     #[test_only]
     use aptos_framework::option;
     #[test_only]
-    const INIT_APT: u64 = 1000000000;
+    const INIT_APT: u64 = 1000000000; // 10 APT
 
     #[test_only]
     fun init_for_test(
@@ -254,9 +255,9 @@ module owner::urn_to_earn {
 
         coin::destroy_mint_cap<AptosCoin>(mint_cap);
 
-        assert!(coin::balance<AptosCoin>(owner_addr)==INIT_APT, 0);
-        assert!(coin::balance<AptosCoin>(user_addr)==INIT_APT, 0);
-        assert!(coin::balance<AptosCoin>(robber_addr)==INIT_APT, 0);
+        assert!(coin::balance<AptosCoin>(owner_addr)==INIT_APT, EAPT_BALANCE_INCONSISTENT);
+        assert!(coin::balance<AptosCoin>(user_addr)==INIT_APT, EAPT_BALANCE_INCONSISTENT);
+        assert!(coin::balance<AptosCoin>(robber_addr)==INIT_APT, EAPT_BALANCE_INCONSISTENT);
         assert!(*option::borrow(&coin::supply<AptosCoin>()) == (INIT_APT*3 as u128), 0);
     }
 
@@ -564,5 +565,87 @@ module owner::urn_to_earn {
 
         assert!(token::balance_of(user_addr, knife_token_id) > 15, EINSUFFICIENT_BALANCE);
         assert!(token::balance_of(user_addr, shard_token_id) > 20, EINSUFFICIENT_BALANCE);
+    }
+
+    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b, robber=@0x0bb3)]
+    public fun test_whitelist_mint(
+        aptos_framework: &signer, owner: &signer, user: &signer, robber: &signer
+    ) acquires UrnToEarnConfig {
+        init_for_test(aptos_framework, owner, user, robber);
+        let user_addr = signer::address_of(user);
+        let owner_addr = signer::address_of(owner);
+        let robber_addr = signer::address_of(robber);
+
+        // test mint by weight
+        let collection = string::utf8(b"BAYC");
+        let free_quota = 1;
+        let discounted_quota = 1;
+        whitelist::add_collection(owner, collection, free_quota, discounted_quota);
+
+        // add whitelisted addresses
+        let wl_addrs = vector::empty<address>();
+        vector::push_back<address>(&mut wl_addrs, owner_addr);
+        vector::push_back<address>(&mut wl_addrs, user_addr);
+        vector::push_back<address>(&mut wl_addrs, robber_addr);
+        whitelist::add_to_whitelist(owner, collection, wl_addrs);
+
+        // get shovel token id
+        let shovel_token_id = mint_shovel_internal(owner, SHOEVEL_PRICE);
+        let owner_balance = INIT_APT - SHOEVEL_PRICE;
+        let owner_balance = owner_balance + SHOEVEL_PRICE;
+        let owner_shovel = 1;
+
+        // first should be free
+        bayc_wl_mint_shovel(owner);
+        owner_shovel = owner_shovel + 1;
+        assert!(token::balance_of(owner_addr, shovel_token_id) == owner_shovel, EINSUFFICIENT_BALANCE);
+        assert!(coin::balance<AptosCoin>(owner_addr)==owner_balance, EAPT_BALANCE_INCONSISTENT);
+
+        // second should be discounted
+        bayc_wl_mint_shovel(user);
+        assert!(token::balance_of(user_addr, shovel_token_id) == 1, EINSUFFICIENT_BALANCE);
+        let user_balance = INIT_APT - SHOEVEL_PRICE/2;
+        owner_balance = owner_balance + SHOEVEL_PRICE/2;
+        assert!(coin::balance<AptosCoin>(user_addr) == user_balance, EAPT_BALANCE_INCONSISTENT);
+        assert!(coin::balance<AptosCoin>(owner_addr) == owner_balance, EAPT_BALANCE_INCONSISTENT);
+    }
+
+    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b, robber=@0x0bb3)]
+    #[expected_failure(abort_code = EWL_QUOTA_OUT)]
+    public fun test_whitelist_quota_out(
+        aptos_framework: &signer, owner: &signer, user: &signer, robber: &signer
+    ) acquires UrnToEarnConfig {
+        init_for_test(aptos_framework, owner, user, robber);
+        let user_addr = signer::address_of(user);
+        let owner_addr = signer::address_of(owner);
+        let robber_addr = signer::address_of(robber);
+
+        // test mint by weight
+        let collection = string::utf8(b"BAYC");
+        let free_quota = 1;
+        let discounted_quota = 0;
+        whitelist::add_collection(owner, collection, free_quota, discounted_quota);
+
+        // add whitelisted addresses
+        let wl_addrs = vector::empty<address>();
+        vector::push_back<address>(&mut wl_addrs, owner_addr);
+        vector::push_back<address>(&mut wl_addrs, user_addr);
+        vector::push_back<address>(&mut wl_addrs, robber_addr);
+        whitelist::add_to_whitelist(owner, collection, wl_addrs);
+
+        // get shovel token id
+        let shovel_token_id = mint_shovel_internal(owner, SHOEVEL_PRICE);
+        let owner_balance = INIT_APT - SHOEVEL_PRICE;
+        let owner_balance = owner_balance + SHOEVEL_PRICE;
+        let owner_shovel = 1;
+
+        // first should be free
+        bayc_wl_mint_shovel(owner);
+        owner_shovel = owner_shovel + 1;
+        assert!(token::balance_of(owner_addr, shovel_token_id) == owner_shovel, EINSUFFICIENT_BALANCE);
+        assert!(coin::balance<AptosCoin>(owner_addr)==owner_balance, EAPT_BALANCE_INCONSISTENT);
+
+        // second should fail, because run out of quota
+        bayc_wl_mint_shovel(user);
     }
 }

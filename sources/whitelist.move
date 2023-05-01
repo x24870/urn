@@ -48,6 +48,7 @@ module owner::whitelist {
         assert!(*borrow(&wl.wl_addrs, addr), EALREADY_MINTED); // true is mintable
     }
 
+    // add a collection by name to the whitelist
     public entry fun add_collection(
         owner: &signer, collection: String, free_quota: u64, discount_quota: u64
     ) acquires WhitelistConfig {
@@ -65,6 +66,7 @@ module owner::whitelist {
         );
     }
 
+    // add a list of addresses by collection name to the whitelist
     public entry fun add_to_whitelist(
         owner: &signer,
         collection: String,
