@@ -119,6 +119,16 @@ module owner::whitelist {
     }
 
     #[view]
+    public fun view_is_whitelisted(
+        collection: String,
+        addr: address
+    ):(bool) acquires WhitelistConfig {
+        let wl_config = borrow_global<WhitelistConfig>(@owner);
+        let wl = borrow<String, Whitelist>(&wl_config.whitelists, collection);
+        return contains<address, bool>(&wl.wl_addrs, addr)
+    }
+
+    #[view]
     public fun sum(nums: vector<u64>): u64 {
         let i = 0;
         let s = 0;
@@ -137,4 +147,5 @@ module owner::whitelist {
             i = i + 1;
         };
     }
+
 }

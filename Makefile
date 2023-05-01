@@ -1,6 +1,8 @@
 FAUCET_URL=http://0.0.0.0:8081
 REST_URL=http://0.0.0.0:8080
-OWNER=0x567e5f9b66053c3d9eb65d38de538c9c52ca4e1b60220fdeec4c405a9dd0ee1c
+TESTNET_URL=https://fullnode.testnet.aptoslabs.com
+OWNER=0x572941edfecf00c392ebf17fdb20729be425ecb5ce018999f19e7e2be534676f
+TESTNET=0x880f255dea4800fcea4b640cc6a9dfdb711f6d75a89719d7e06f936d3b8dbaea
 
 init_profiles:
 	aptos init --profile owner --rest-url ${REST_URL} --faucet-url ${FAUCET_URL}
@@ -10,7 +12,7 @@ init_testnet_prof:
 	aptos init --profile testnet --rest-url "https://fullnode.testnet.aptoslabs.com/v1"
 
 local_testnet:
-	aptos node run-local-testnet --with-faucet
+	aptos node run-local-testnet --force-restart --with-faucet
 
 test:
 	aptos move test --skip-fetch-latest-git-deps --named-addresses owner=owner 
@@ -90,12 +92,12 @@ view:
 add_wl:
 	aptos move run-script --assume-yes \
         --compiled-script-path build/urn_to_earn/bytecode_scripts/add_to_whitelist.mv \
-        --sender-account owner --profile=owner \
+        --sender-account ${profile} --profile ${profile} \
 
 add_collection:
 	aptos move run-script --assume-yes \
         --compiled-script-path build/urn_to_earn/bytecode_scripts/add_collection.mv \
-        --sender-account owner --profile=owner \
+        --sender-account ${profile} --profile ${profile} \
 
 get_collection_left_quota:
 	curl --request POST \
@@ -105,6 +107,36 @@ get_collection_left_quota:
 		"function": "${OWNER}::whitelist::get_collection_left_quota", \
 		"type_arguments": [], \
 		"arguments": ["BAYC"] \
+	}'
+
+get_collection_left_quota_testnet:
+	curl --request POST \
+	--url ${TESTNET_URL}/v1/view \
+	--header 'Content-Type: application/json' \
+	--data '{ \
+		"function": "${TESTNET}::whitelist::get_collection_left_quota", \
+		"type_arguments": [], \
+		"arguments": ["BAYC"] \
+	}'
+
+view_is_whitelisted:
+	curl --request POST \
+	--url ${REST_URL}/v1/view \
+	--header 'Content-Type: application/json' \
+	--data '{ \
+		"function": "${OWNER}::whitelist::view_is_whitelisted", \
+		"type_arguments": [], \
+		"arguments": ["BAYC", "0x572941edfecf00c392ebf17fdb20729be425ecb5ce018999f19e7e2be534676f"] \
+	}'
+
+view_is_whitelisted_testnet:
+	curl --request POST \
+	--url ${TESTNET_URL}/v1/view \
+	--header 'Content-Type: application/json' \
+	--data '{ \
+		"function": "${TESTNET}::whitelist::view_is_whitelisted", \
+		"type_arguments": [], \
+		"arguments": ["BAYC", "0x880f255dea4800fcea4b640cc6a9dfdb711f6d75a89719d7e06f936d3b8dbaea"] \
 	}'
 
 sum:
