@@ -50,11 +50,11 @@ module owner::bone {
     const HIP_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmbQuPgdA29Mf34Pqf2gJjqC63qYQX4KZF9e8xVffCZCqw/normal_pelvis.jpg";
     const LEG_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmbQuPgdA29Mf34Pqf2gJjqC63qYQX4KZF9e8xVffCZCqw/normal_leg.jpg";
     const ARM_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmbQuPgdA29Mf34Pqf2gJjqC63qYQX4KZF9e8xVffCZCqw/normal_hand.jpg";
-    const GOLDEN_SKULL_URL: vector<u8> = b"https://"; // TODO: update all urls
-    const GOLDEN_CHEST_URL: vector<u8> = b"https://"; 
-    const GOLDEN_HIP_URL: vector<u8> = b"https://";
-    const GOLDEN_LEG_URL: vector<u8> = b"https://";
-    const GOLDEN_ARM_URL: vector<u8> = b"https://";
+    const GOLDEN_SKULL_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmbQuPgdA29Mf34Pqf2gJjqC63qYQX4KZF9e8xVffCZCqw/golden_skull.jpg";
+    const GOLDEN_CHEST_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmbQuPgdA29Mf34Pqf2gJjqC63qYQX4KZF9e8xVffCZCqw/golden_ribs.jpg"; 
+    const GOLDEN_HIP_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmbQuPgdA29Mf34Pqf2gJjqC63qYQX4KZF9e8xVffCZCqw/golden_pelvis.jpg";
+    const GOLDEN_LEG_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmbQuPgdA29Mf34Pqf2gJjqC63qYQX4KZF9e8xVffCZCqw/golden_leg.jpg";
+    const GOLDEN_ARM_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmbQuPgdA29Mf34Pqf2gJjqC63qYQX4KZF9e8xVffCZCqw/golden_hand.jpg";
 
     const POINT_PROP_NAME: vector<u8> = b"point";
     const MATERIAL_PROP_NAME: vector<u8> = b"material";

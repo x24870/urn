@@ -23,7 +23,7 @@ module owner::shard {
     const EINSUFFICIENT_BALANCE: u64 = 4;
 
     const TOKEN_NAME: vector<u8> = b"shard";
-    const TOKEN_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmSioUrHchtStNHXCHSzS8M6HVHDV8dPojgwF4EqpFBtf5/shard.jpg";
+    const TOKEN_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmbQuPgdA29Mf34Pqf2gJjqC63qYQX4KZF9e8xVffCZCqw/golden_bone_fragments.jpg";
 
     public(friend) fun init_shard(sender: &signer, resource: &signer, collection_name: String) {
         // Don't run setup more than once

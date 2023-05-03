@@ -34,7 +34,7 @@ module owner::urn_to_earn {
 
     const MAX_U64: u64 = 18446744073709551615;
 
-    const COLLECTION_NAME: vector<u8> = b"URN";
+    const COLLECTION_NAME: vector<u8> = b"urn";
 
     const SHOEVEL_PRICE: u64 = 100000; // 0.001 APT
     const URN_PRICE: u64 = 1000000; // 0.01 APT

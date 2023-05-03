@@ -30,7 +30,7 @@ module owner::knife {
     const EMINTING_NOT_ENABLED: u64 = 3;
 
     const TOKEN_NAME: vector<u8> = b"knife";
-    const TOKEN_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmSioUrHchtStNHXCHSzS8M6HVHDV8dPojgwF4EqpFBtf5/knife.jpg";
+    const TOKEN_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmbQuPgdA29Mf34Pqf2gJjqC63qYQX4KZF9e8xVffCZCqw/knife.jpg";
 
     public(friend) fun init_knife(sender: &signer, resource: &signer, collection_name: String) {
         // Don't run setup more than once
