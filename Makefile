@@ -136,7 +136,17 @@ view_is_whitelisted_testnet:
 	--data '{ \
 		"function": "${TESTNET}::whitelist::view_is_whitelisted", \
 		"type_arguments": [], \
-		"arguments": ["BAYC", "0x880f255dea4800fcea4b640cc6a9dfdb711f6d75a89719d7e06f936d3b8dbaea"] \
+		"arguments": ["Blocto", "0x14bb3a81a6a92db55f4ef6f4f1abef445c418a33d5ddfd4bd672346c9db38add"] \
+	}'
+
+view_is_whitelisted_and_minted_testnet:
+	curl --request POST \
+	--url ${TESTNET_URL}/v1/view \
+	--header 'Content-Type: application/json' \
+	--data '{ \
+		"function": "${TESTNET}::whitelist::view_is_whitelisted_and_minted", \
+		"type_arguments": [], \
+		"arguments": ["Blocto", "0x14bb3a81a6a92db55f4ef6f4f1abef445c418a33d5ddfd4bd672346c9db38add"] \
 	}'
 
 sum:

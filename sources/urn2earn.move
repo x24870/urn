@@ -86,6 +86,20 @@ module owner::urn_to_earn {
         mint_shovel_internal(sign, SHOEVEL_PRICE);
     }
 
+    public entry fun wl_mint_shovel(sign: &signer, collection_name: String) acquires UrnToEarnConfig {
+        let mint_type = whitelist::label_minted(collection_name, signer::address_of(sign));
+        // FREE_MINT:0, DISCOUNTED_MINT:1, MINT:2
+        let shovel_price = SHOEVEL_PRICE;
+        if (mint_type == 0) {
+            shovel_price = 0
+        } else if (mint_type == 1) {
+            shovel_price = shovel_price / 2
+        } else {
+            assert!(false, EWL_QUOTA_OUT);
+        };
+        mint_shovel_internal(sign, shovel_price);
+    }
+
     public entry fun bayc_wl_mint_shovel(sign: &signer) acquires UrnToEarnConfig {
         let mint_type = whitelist::label_minted(string::utf8(b"BAYC"), signer::address_of(sign));
         // FREE_MINT:0, DISCOUNTED_MINT:1, MINT:2
@@ -137,8 +151,8 @@ module owner::urn_to_earn {
     ): TokenId acquires UrnToEarnConfig {
         let sign_addr = signer::address_of(sign);
         // check user owns the token
-        assert!(token::balance_of(sign_addr, urn_token_id) == 1, EINSUFFICIENT_BALANCE);
-        assert!(token::balance_of(sign_addr, bone_token_id) == 1, EINSUFFICIENT_BALANCE);
+        assert!(token::balance_of(sign_addr, urn_token_id) >= 1, EINSUFFICIENT_BALANCE);
+        assert!(token::balance_of(sign_addr, bone_token_id) >= 1, EINSUFFICIENT_BALANCE);
 
         // burn
         if (urn::is_golden_urn(urn_token_id)) {

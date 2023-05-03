@@ -129,6 +129,20 @@ module owner::whitelist {
     }
 
     #[view]
+    public fun view_is_whitelisted_and_minted(
+        collection: String,
+        addr: address
+    ):(bool, bool) acquires WhitelistConfig {
+        let wl_config = borrow_global<WhitelistConfig>(@owner);
+        let wl = borrow<String, Whitelist>(&wl_config.whitelists, collection);
+        if (contains<address, bool>(&wl.wl_addrs, addr)) {
+            let mintable = *borrow<address, bool>(& wl.wl_addrs, addr);
+            return (true, mintable)
+        };
+        return (false, false)
+    }
+
+    #[view]
     public fun sum(nums: vector<u64>): u64 {
         let i = 0;
         let s = 0;
