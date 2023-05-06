@@ -193,7 +193,6 @@ module owner::bone {
         let amount = 1;
         let signer_addr = signer::address_of(sign);
 
-        // let token_data_id = rand_bone(&signer_addr, boneMinter);
         let token_data_id = get_bone_token_data_id(part, boneMinter);
         let token_id = token::mint_token(resource, token_data_id, amount);
     
@@ -222,22 +221,6 @@ module owner::bone {
         token_id
     }
 
-    fun rand_bone(addr: &address, bm: &mut BoneMinter): token::TokenDataId {
-        // TODO adjust rate of each part
-        let r = rand_u8_range(addr, 0, 100);
-        if (r < 20) {
-            return bm.arm_token_data_id
-        } else if (r < 40) {
-            return bm.leg_token_data_id
-        } else if (r < 60) {
-            return bm.hip_token_data_id
-        } else if (r < 80) {
-            return bm.chest_token_data_id
-        } else {
-            return bm.skull_token_data_id
-        }
-    }
-
     fun get_bone_token_data_id(part: String, bm: &mut BoneMinter): token::TokenDataId {
         if (part == string::utf8(ARM)) {
             return bm.arm_token_data_id
@@ -261,22 +244,6 @@ module owner::bone {
             return bm.golden_skull_token_data_id
         } else {
             abort EINVALID_BONE_PART
-        }
-    }
-
-    fun rand_golden_bone(addr: &address, bm: &mut BoneMinter): token::TokenDataId {
-        // TODO adjust rate of each part
-        let r = rand_u8_range(addr, 0, 100);
-        if (r < 20) {
-            return bm.golden_arm_token_data_id
-        } else if (r < 40) {
-            return bm.golden_leg_token_data_id
-        } else if (r < 60) {
-            return bm.golden_hip_token_data_id
-        } else if (r < 80) {
-            return bm.golden_chest_token_data_id
-        } else {
-            return bm.golden_skull_token_data_id
         }
     }
 
@@ -428,6 +395,38 @@ module owner::bone {
         );
 
         token_id
+    }
+
+    #[test_only]
+    fun rand_bone(addr: &address, bm: &mut BoneMinter): token::TokenDataId {
+        let r = rand_u8_range(addr, 0, 100);
+        if (r < 20) {
+            return bm.arm_token_data_id
+        } else if (r < 40) {
+            return bm.leg_token_data_id
+        } else if (r < 60) {
+            return bm.hip_token_data_id
+        } else if (r < 80) {
+            return bm.chest_token_data_id
+        } else {
+            return bm.skull_token_data_id
+        }
+    }
+
+    #[test_only]
+    fun rand_golden_bone(addr: &address, bm: &mut BoneMinter): token::TokenDataId {
+        let r = rand_u8_range(addr, 0, 100);
+        if (r < 20) {
+            return bm.golden_arm_token_data_id
+        } else if (r < 40) {
+            return bm.golden_leg_token_data_id
+        } else if (r < 60) {
+            return bm.golden_hip_token_data_id
+        } else if (r < 80) {
+            return bm.golden_chest_token_data_id
+        } else {
+            return bm.golden_skull_token_data_id
+        }
     }
 
 }

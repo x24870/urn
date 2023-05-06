@@ -14,7 +14,7 @@ module owner::whitelist {
     const EALREADY_MINTED:         u64 = 6;
     const EINVALID_COLLECTION:     u64 = 7;
     const EINVALID_ADDRESS:        u64 = 8;
-    const EDUPLIDATED_WL_ADDR:     u64 = 9;
+    const EDUPLICATED_WL_ADDR:     u64 = 9;
 
     // mint type
     const FREE_MINT:       u8 = 0;
@@ -80,7 +80,7 @@ module owner::whitelist {
         let i = 0;
         while (i < vector::length(&wl_addresses)) {
             let addr = *vector::borrow(&wl_addresses, i);
-            assert!(!contains<address, bool>(&wl.wl_addrs, addr), EDUPLIDATED_WL_ADDR);
+            assert!(!contains<address, bool>(&wl.wl_addrs, addr), EDUPLICATED_WL_ADDR);
             add(&mut wl.wl_addrs, addr, true);
 
             i = i + 1;
