@@ -168,8 +168,10 @@ module owner::urn_to_earn {
         let resource = get_resource_account();
 
         let filled_urn = urn::fill(sign, &resource, urn_token_id, point);
-        knife::add_victim(sign, filled_urn);
-
+        if (!urn::is_golden_urn(filled_urn)) {
+            knife::add_victim(sign, filled_urn);
+        };
+        
         return filled_urn
     }
 
@@ -549,12 +551,32 @@ module owner::urn_to_earn {
         let knife_token_id = knife::mint(user, &resource);
         token::transfer(&resource, knife_token_id, robber_addr, 1);
 
-        let (robber_urn, amount) = knife::rob(robber, robber_urn, &resource);
+        let (robber_urn, amount) = knife::random_rob(robber, robber_urn, &resource);
         assert!(token::balance_of(robber_addr, knife_token_id) == 0, EINSUFFICIENT_BALANCE);
         assert!(urn::get_ash_fullness(user_urn, user_addr)+amount==50, ETOKEN_PROP_MISMATCH);
-        assert!(urn::get_ash_fullness(robber_urn, robber_addr)==amount, ETOKEN_PROP_MISMATCH);
+        assert!(urn::get_ash_fullness(robber_urn, robber_addr) == amount, ETOKEN_PROP_MISMATCH);
         assert!(!knife::contains_victim(user_addr), ETEST_ERROR);
         // debug::print(&amount);
+
+        //// test rob by address
+        let knife_token_id = knife::mint(user, &resource);
+        token::transfer(&resource, knife_token_id, robber_addr, 1);
+        let rob_fullness_before = urn::get_ash_fullness(robber_urn, robber_addr);
+        let user_fullness_before = urn::get_ash_fullness(user_urn, user_addr);
+
+        let bone_token_id_1 = bone::mint_50point_skull(owner, &resource);
+        token::transfer(&resource, bone_token_id_1, user_addr, 1);
+
+        user_urn = burn_and_fill_internal(user, user_urn, bone_token_id_1);
+        assert!(urn::get_ash_fullness(user_urn, user_addr) == user_fullness_before+50, ETOKEN_PROP_MISMATCH);
+        assert!(token::balance_of(user_addr, bone_token_id_1) == 0, EINSUFFICIENT_BALANCE);
+        assert!(knife::contains_victim(user_addr), ETEST_ERROR);
+
+        user_fullness_before = urn::get_ash_fullness(user_urn, user_addr);
+        let (robber_urn, amount) = knife::rob(robber, robber_urn, user_addr, user_urn, &resource);
+        assert!(token::balance_of(robber_addr, knife_token_id) == 0, EINSUFFICIENT_BALANCE);
+        assert!(urn::get_ash_fullness(user_urn, user_addr)+amount==user_fullness_before, ETOKEN_PROP_MISMATCH);
+        assert!(urn::get_ash_fullness(robber_urn, robber_addr)-amount==rob_fullness_before, ETOKEN_PROP_MISMATCH);
     }
 
 

@@ -107,14 +107,23 @@ module owner::knife {
     public(friend) fun add_victim(sender: &signer, urn: TokenId) acquires KnifeMinter {
         let km = borrow_global_mut<KnifeMinter>(@owner);
         let addr = signer::address_of(sender);
+
+        
         if (!iterable_table::contains(&km.table, addr)) {
+            // victim table length 10, TODO: determine the length
+            if (iterable_table::length(&km.table) >= 10) {
+                // remove 1 victim from head
+                let head = iterable_table::head_key(&km.table);
+                iterable_table::remove(&mut km.table, *option::borrow(&head));
+            };
+
             iterable_table::add(&mut km.table, addr, urn);
         }
     }
 
     // public(friend) fun remove_victim(addr: address) acquires KnifeMinter {
     //     let km = borrow_global_mut<KnifeMinter>(@owner);
-    //     assert!(iterable_table::contains(&km.table, addr) ,ENO_VICTIM);
+    //     // assert!(iterable_table::contains(&km.table, addr) ,ENO_VICTIM);
     //     iterable_table::remove(&mut km.table, addr);
     // }
 
@@ -123,7 +132,7 @@ module owner::knife {
         return iterable_table::contains(&km.table, addr)
     }
 
-    public(friend) fun rob(
+    public(friend) fun random_rob(
         sender: &signer, 
         urn: TokenId,
         resource: &signer
@@ -151,5 +160,32 @@ module owner::knife {
         urn = urn::fill(sender, resource, urn, amount);
 
         return (urn, amount)
+    }
+
+    public(friend) fun rob(
+        sender: &signer, 
+        urn: TokenId,
+        victim_addr: address,
+        vimtim_urn: TokenId,
+        resource: &signer
+    ):(TokenId, u8) acquires KnifeMinter {
+        // burn knife token
+        destroy_knife(sender);
+        let km = borrow_global_mut<KnifeMinter>(@owner);
+        let len = length<address, TokenId>(&km.table);
+        assert!(len != 0, ETABLE_EMPTY);
+
+        // rob
+        let amount = urn::rand_drain(resource, victim_addr, vimtim_urn);
+        urn = urn::fill(sender, resource, urn, amount);
+
+        // TODO: add robber to victim table
+        return (urn, amount)
+    }
+
+    #[test_only]
+    public fun is_victim(addr: address): bool acquires KnifeMinter {
+        let km = borrow_global<KnifeMinter>(@owner);
+        return iterable_table::contains(&km.table, addr)
     }
 }
