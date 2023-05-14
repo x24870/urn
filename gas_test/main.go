@@ -22,9 +22,9 @@ const DefaultMaxGasAmount = uint64(5000)
 // const OwnerAddr = "572941edfecf00c392ebf17fdb20729be425ecb5ce018999f19e7e2be534676f"
 // const UserAddr = "c0cc333a8a8b22a716afc439fbf52b2b8c2fabdabb9c425daf7937945749be6b"
 // const UserSeed = "6bbee9dce763f60c672f10a48a024d6e6d3306240095fe00e80afc972196b973"
-const OwnerAddr = "880f255dea4800fcea4b640cc6a9dfdb711f6d75a89719d7e06f936d3b8dbaea"
-const UserAddr = "edee10d387fcc2f10d54d12dd69ce973dd8b4f0e7a59f0fbb57db64500d7ce5c"
-const UserSeed = "c677c67d15e8c3117f0f96f577bd976968a44ae25868fb9ff0756d1bfd132072"
+const OwnerAddr = "c9e7e612afec0ebf928da3a0f297ae53d3598d7d33cfac7b1072a605dd672961"
+const UserAddr = "7f3994fea07933ad0ee7e91a8494cbdaadb1c486a10d7ae79192d79befc27b4b"
+const UserSeed = "0b2374d9d786fa18aa7363f0a56b40bd6b00309c857a5658681f168e77bfb602"
 
 var aptosClient client.AptosClient
 var tokenClient client.TokenClient
@@ -75,19 +75,141 @@ func init() {
 }
 
 func main() {
+	// printAccountTokens(user)
+
+	// do 10 times
+	// for i := 0; i < 10; i++ {
+	// 	mintShovelDig()
+	// }
+
+	// resp, err := mint(aptosClient, user, "shovel")
+	// resp, err := mint(aptosClient, user, "urn")
+	// resp, err = dig(aptosClient, user)
+	resp, err := putBonePart(aptosClient, user, "arm")
+	if err != nil {
+		panic(fmt.Errorf("error: %v", err))
+	}
+	aptosClient.WaitForTransaction(ctx, resp.Hash)
+
+	// printAccountTokens(user)
+}
+
+// pretty print account tokens
+func printAccountTokens(a models.AccountAddress) {
+	tokens, err := tokenClient.ListAccountTokens(ctx, a)
+	if err != nil {
+		panic(err)
+	}
+	for _, t := range tokens {
+		if t.ID.Collection != "urn" {
+			continue
+		}
+		fmt.Printf("%s: %d\n", t.ID.Name, t.Amount)
+		for k, v := range t.JSONProperties {
+			if k == "point" || k == "ash" {
+				fmt.Printf("  point: %s\n", v)
+			}
+		}
+	}
+}
+
+func putBonePart(client client.AptosClient, aa models.AccountAddress, part string) (*client.TransactionResp, error) {
+	tokens, err := tokenClient.ListAccountTokens(ctx, aa)
+	if err != nil {
+		return nil, fmt.Errorf("tokenClient.ListAccountTokens error: %v", err)
+	}
+
+	var boneToken models.TokenID
+	for _, t := range tokens {
+		if t.ID.Name == part {
+			boneToken = t.ID
+		}
+	}
+	if boneToken.Name != part {
+		return nil, fmt.Errorf("no bone token found")
+	}
+	fmt.Printf("boneToken: %+v\n", boneToken)
+
+	var urnToken models.TokenID
+	for _, t := range tokens {
+		if t.ID.Name == "urn" {
+			urnToken = t.ID
+		}
+	}
+	fmt.Printf("urnToken: %+v\n", urnToken)
+
+	accountInfo, err := aptosClient.GetAccount(ctx, aa.ToHex())
+	if err != nil {
+		panic(fmt.Errorf("aptosClient.GetAccount error: %v", err))
+	}
+
+	var tx models.Transaction
+	err = tx.SetChainID(ChainID).
+		SetSender(aa.ToHex()).
+		SetPayload(models.EntryFunctionPayload{
+			Module:   Urn2EarnModule,
+			Function: "burn_and_fill",
+			Arguments: []interface{}{
+				uint64(urnToken.PropertyVersion),
+				uint64(boneToken.PropertyVersion),
+				part,
+			},
+		}).
+		SetExpirationTimestampSecs(uint64(time.Now().Add(30 * time.Second).Unix())).
+		SetGasUnitPrice(GasPrice).
+		SetMaxGasAmount(DefaultMaxGasAmount).
+		SetSequenceNumber(accountInfo.SequenceNumber).Error()
+	if err != nil {
+		return nil, fmt.Errorf("set tx error: %v", err)
+	}
+
+	seed, err := hex.DecodeString(UserSeed)
+	if err != nil {
+		return nil, fmt.Errorf("decode seed error: %v", err)
+	}
+	sender := models.NewSingleSigner(ed25519.NewKeyFromSeed(seed))
+	if err := sender.Sign(&tx).Error(); err != nil {
+		return nil, fmt.Errorf("sign tx error: %v", err)
+	}
+
+	_, err = client.SimulateTransaction(ctx, tx.UserTransaction, false, false)
+	if err != nil {
+		return nil, fmt.Errorf("simulate tx error: %w", err)
+	}
+
+	txResp, err := client.SubmitTransaction(ctx, tx.UserTransaction)
+	if err != nil {
+		return nil, fmt.Errorf("submit tx error: %w", err)
+	}
+
+	return txResp, nil
+}
+
+func mintShovelDig() {
 	printBalance()
 	ob := getBalance(owner)
 	ub := getBalance(user)
 
-	txResp, err := mintShovel(aptosClient, user)
+	txResp, err := mint(aptosClient, user, "shovel")
 	if err != nil {
 		panic(fmt.Errorf("mint shovel error: %v", err))
 	}
 	aptosClient.WaitForTransaction(ctx, txResp.Hash)
 
+	fmt.Println("mint shovel success")
+	fmt.Printf("owner balance diff %f\n", (getBalance(owner)-ob)/Decimal)
+	fmt.Printf("user balance diff %f\n", (getBalance(user)-ub)/Decimal)
+
+	digResp, err := dig(aptosClient, user)
+	if err != nil {
+		panic(fmt.Errorf("dig error: %v", err))
+	}
+	aptosClient.WaitForTransaction(ctx, digResp.Hash)
+
+	fmt.Println("dig success")
+	fmt.Printf("owner balance diff %f\n", (getBalance(owner)-ob)/Decimal)
+	fmt.Printf("user balance diff %f\n", (getBalance(user)-ub)/Decimal)
 	printBalance()
-	fmt.Printf("owner balance diff %f\n", getBalance(owner)-ob)
-	fmt.Printf("user balance diff %f\n", getBalance(user)-ub)
 }
 
 func getBalance(aa models.AccountAddress) float64 {
@@ -132,7 +254,7 @@ func printBalance() {
 	printCoinRes(userBalance)
 }
 
-func mintShovel(client client.AptosClient, aa models.AccountAddress) (*client.TransactionResp, error) {
+func dig(client client.AptosClient, aa models.AccountAddress) (*client.TransactionResp, error) {
 	accountInfo, err := aptosClient.GetAccount(ctx, aa.ToHex())
 	if err != nil {
 		return nil, fmt.Errorf("get account error: %v", err)
@@ -143,7 +265,57 @@ func mintShovel(client client.AptosClient, aa models.AccountAddress) (*client.Tr
 		SetSender(aa.ToHex()).
 		SetPayload(models.EntryFunctionPayload{
 			Module:    Urn2EarnModule,
-			Function:  "mint_shovel",
+			Function:  "dig",
+			Arguments: []interface{}{},
+		}).
+		SetExpirationTimestampSecs(uint64(time.Now().Add(30 * time.Second).Unix())).
+		SetGasUnitPrice(GasPrice).
+		SetMaxGasAmount(DefaultMaxGasAmount).
+		SetSequenceNumber(accountInfo.SequenceNumber).Error()
+
+	if err != nil {
+		return nil, fmt.Errorf("build tx error: %v", err)
+	}
+
+	seed, err := hex.DecodeString(UserSeed)
+	if err != nil {
+		return nil, fmt.Errorf("decode seed error: %v", err)
+	}
+	sender := models.NewSingleSigner(ed25519.NewKeyFromSeed(seed))
+	if err := sender.Sign(&tx).Error(); err != nil {
+		return nil, fmt.Errorf("sign tx error: %v", err)
+	}
+
+	txResp, err := client.SubmitTransaction(ctx, tx.UserTransaction)
+	if err != nil {
+		return nil, fmt.Errorf("submit tx error: %w", err)
+	}
+
+	return txResp, nil
+}
+
+func mint(client client.AptosClient, aa models.AccountAddress, obj string) (*client.TransactionResp, error) {
+	accountInfo, err := aptosClient.GetAccount(ctx, aa.ToHex())
+	if err != nil {
+		return nil, fmt.Errorf("get account error: %v", err)
+	}
+	tx := models.Transaction{}
+
+	var fn string
+	switch obj {
+	case "shovel":
+		fn = "mint_shovel"
+	case "urn":
+		fn = "mint_urn"
+	default:
+		return nil, fmt.Errorf("unknown obj %s", obj)
+	}
+
+	err = tx.SetChainID(ChainID).
+		SetSender(aa.ToHex()).
+		SetPayload(models.EntryFunctionPayload{
+			Module:    Urn2EarnModule,
+			Function:  fn,
 			Arguments: []interface{}{},
 		}).
 		SetExpirationTimestampSecs(uint64(time.Now().Add(30 * time.Second).Unix())).
