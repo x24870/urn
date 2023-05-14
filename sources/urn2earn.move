@@ -141,8 +141,14 @@ module owner::urn_to_earn {
     }
 
     public fun burn_and_fill(
-        sign: &signer, bone_token_id: TokenId, urn_token_id: TokenId
+        sign: &signer, urn_prop_ver: u64, bone_prop_ver: u64, part: String, 
     ) acquires UrnToEarnConfig {
+        let creator = @owner;
+        let collection = string::utf8(COLLECTION_NAME);
+        let urn_token_name = string::utf8(urn::get_urn_token_name());
+
+        let urn_token_id = token::create_token_id_raw(creator, collection, urn_token_name, urn_prop_ver);
+        let bone_token_id = token::create_token_id_raw(creator, collection, part, bone_prop_ver);
         burn_and_fill_internal(sign, urn_token_id, bone_token_id);
     }
 
@@ -214,7 +220,16 @@ module owner::urn_to_earn {
         token_id
     }
 
-    public fun reincarnate(sign: &signer, urn_token_id: TokenId) {
+    public entry fun reincarnate(sign: &signer, urn_prop_ver: u64) {
+        let creator = @owner;
+        let collection = string::utf8(COLLECTION_NAME);
+        let urn_token_name = string::utf8(urn::get_urn_token_name());
+
+        let urn_token_id = token::create_token_id_raw(creator, collection, urn_token_name, urn_prop_ver);
+        reincarnate_internal(sign, urn_token_id);
+    }
+
+    public fun reincarnate_internal(sign: &signer, urn_token_id: TokenId) {
         // check user owns the token
         assert!(token::balance_of(signer::address_of(sign), urn_token_id) == 1, EINSUFFICIENT_BALANCE);
         urn::burn_filled_urn(sign, urn_token_id);
@@ -488,7 +503,7 @@ module owner::urn_to_earn {
         urn_token_id = burn_and_fill_internal(user, urn_token_id, bone_token_id_1);
         assert!(urn::get_ash_fullness(urn_token_id, user_addr) == 50, ETOKEN_PROP_MISMATCH);
 
-        reincarnate(user, urn_token_id);
+        reincarnate_internal(user, urn_token_id);
     }
 
     #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b, robber=@0x0bb3)]
@@ -516,7 +531,7 @@ module owner::urn_to_earn {
         assert!(urn::get_ash_fullness(urn_token_id, user_addr) == 100, ETOKEN_PROP_MISMATCH);
         assert!(token::balance_of(user_addr, bone_token_id_2) == 0, EINSUFFICIENT_BALANCE);
 
-        reincarnate(user, urn_token_id);
+        reincarnate_internal(user, urn_token_id);
         assert!(token::balance_of(user_addr, urn_token_id) == 0, EINSUFFICIENT_BALANCE);
 
         // TODO: check if urn_burned map is updates

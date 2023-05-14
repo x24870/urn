@@ -181,6 +181,10 @@ module owner::urn {
         name
     }
 
+    public fun get_urn_token_name(): vector<u8> {
+        URN_TOKEN_NAME
+    }
+
     public(friend) fun fill(
         sign: &signer, resource: &signer, token_id: TokenId, amount: u8
     ): TokenId {
