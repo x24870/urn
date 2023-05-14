@@ -51,7 +51,7 @@ module owner::urn_to_earn {
         // Set up NFT collection
         let name = string::utf8(COLLECTION_NAME);
         let description = string::utf8(b"Dig your grandma and put to the urn");
-        let uri = string::utf8(b"https://urn.jpg");
+        let uri = string::utf8(b"https://urn.jpg"); // TODO update collection image
         let maximum = MAX_U64;
         let mutate_setting = vector<bool>[ false, true, false ]; // desc, max, uri
         token::create_collection(&resource, name, description, uri, maximum, mutate_setting);
@@ -140,10 +140,11 @@ module owner::urn_to_earn {
         token_id
     }
 
-    public fun burn_and_fill(
+    public entry fun burn_and_fill(
         sign: &signer, urn_prop_ver: u64, bone_prop_ver: u64, part: String, 
     ) acquires UrnToEarnConfig {
-        let creator = @owner;
+        let resource = get_resource_account();
+        let creator = signer::address_of(&resource);
         let collection = string::utf8(COLLECTION_NAME);
         let urn_token_name = string::utf8(urn::get_urn_token_name());
 
@@ -243,6 +244,8 @@ module owner::urn_to_earn {
     // use aptos_framework::debug;
     #[test_only]
     use aptos_framework::option;
+    #[test_only]
+    use aptos_token::property_map;
     #[test_only]
     const INIT_APT: u64 = 1000000000; // 10 APT
 
@@ -368,6 +371,44 @@ module owner::urn_to_earn {
         // let point = bone::get_bone_point(golden_bone_token_id, user_addr);
         // debug::print(&point);
         bone::is_golden_bone(golden_bone_token_id, user_addr);
+    }
+
+    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b, robber=@0x0bb3)]
+    public fun test_entry_func(
+        aptos_framework: &signer, owner: &signer, user: &signer, robber: &signer
+    ) acquires UrnToEarnConfig {
+        init_for_test(aptos_framework, owner, user, robber);
+        let user_addr = signer::address_of(user);
+        let resource = get_resource_account();
+
+        // test mint urn
+        let urn_token_id = urn::mint(user, &resource);
+        token::transfer(&resource, urn_token_id, user_addr, 1);
+
+        // test mint bone
+        let bone_token_id = bone::mint_bone(user, &resource);
+        token::transfer(&resource, bone_token_id, user_addr, 1);
+        assert!(token::balance_of(user_addr, bone_token_id) == 1, EINSUFFICIENT_BALANCE);
+
+        let point = bone::get_bone_point(bone_token_id, user_addr);
+        // debug::print(&point);
+
+        // test burn bone and fill urn
+        urn_token_id = burn_and_fill_internal(user, urn_token_id, bone_token_id);
+        assert!(token::balance_of(user_addr, bone_token_id) == 0, EINSUFFICIENT_BALANCE);
+        let fullness = urn::get_ash_fullness(urn_token_id, user_addr);
+        assert!(fullness == point, EINSUFFICIENT_BALANCE);
+
+        // urn property version is fixed, put bone to it again
+        let bone_token_id = bone::mint_bone(user, &resource);
+        token::transfer(&resource, bone_token_id, user_addr, 1);
+        assert!(token::balance_of(user_addr, bone_token_id) == 1, EINSUFFICIENT_BALANCE);
+
+        let (_, _, _, urn_prop_ver) = token::get_token_id_fields(&bone_token_id);
+        let (_, _, _, bone_prop_ver) = token::get_token_id_fields(&bone_token_id);
+        let bone_pm = token::get_property_map(user_addr, bone_token_id);
+        let part = property_map::read_string(&bone_pm, &string::utf8(b"part"));
+        burn_and_fill(user, urn_prop_ver, bone_prop_ver, part);
     }
 
     #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b, robber=@0x0bb3)]

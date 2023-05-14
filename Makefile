@@ -1,8 +1,8 @@
 FAUCET_URL=http://0.0.0.0:8081
 REST_URL=http://0.0.0.0:8080
 TESTNET_URL=https://fullnode.testnet.aptoslabs.com
-OWNER=0x572941edfecf00c392ebf17fdb20729be425ecb5ce018999f19e7e2be534676f
-TESTNET=0x880f255dea4800fcea4b640cc6a9dfdb711f6d75a89719d7e06f936d3b8dbaea
+OWNER=0x0
+TESTNET=0xc9e7e612afec0ebf928da3a0f297ae53d3598d7d33cfac7b1072a605dd672961
 
 init_profiles:
 	aptos init --profile owner --rest-url ${REST_URL} --faucet-url ${FAUCET_URL}
@@ -12,7 +12,10 @@ init_testnet_prof:
 	aptos init --profile testnet --rest-url "https://fullnode.testnet.aptoslabs.com/v1"
 
 local_testnet:
-	aptos node run-local-testnet --force-restart --with-faucet
+	aptos node run-local-testnet --with-faucet
+
+local_testnet_restart:
+	aptos node run-local-testnet --with-faucet --force-restart
 
 test:
 	aptos move test --skip-fetch-latest-git-deps --named-addresses owner=owner 
@@ -39,8 +42,8 @@ publish_testnet:
 	--sender-account testnet --profile testnet
 
 mint_shovel:
-	aptos move run --function-id ${OWNER}::urn_to_earn::mint_shovel \
-	--sender-account=owner --profile=owner
+	aptos move run --function-id ${TESTNET}::urn_to_earn::mint_shovel \
+	--sender-account=${profile} --profile=${profile}
 	
 wl_mint_shovel:
 	aptos move run --function-id ${OWNER}::urn_to_earn::bayc_wl_mint_shovel \
