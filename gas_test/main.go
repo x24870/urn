@@ -25,6 +25,8 @@ const DefaultMaxGasAmount = uint64(5000)
 const OwnerAddr = "c9e7e612afec0ebf928da3a0f297ae53d3598d7d33cfac7b1072a605dd672961"
 const UserAddr = "7f3994fea07933ad0ee7e91a8494cbdaadb1c486a10d7ae79192d79befc27b4b"
 const UserSeed = "0b2374d9d786fa18aa7363f0a56b40bd6b00309c857a5658681f168e77bfb602"
+const User2Addr = "ff3613244bdcd00befa4388a79c77182b65ce76ab7d36b91b12baeadfdc70f0e"
+const User2Seed = "bb6cacefe5590e93f2ffd9c4b207b3f7adb368aa9ad32631b6f0b2dd6a2678a7"
 
 var aptosClient client.AptosClient
 var tokenClient client.TokenClient
@@ -34,6 +36,7 @@ var aptosCoinTypeTag models.TypeTag
 
 var owner models.AccountAddress
 var user models.AccountAddress
+var user2 models.AccountAddress
 
 var Urn2EarnModule models.Module
 
@@ -72,6 +75,11 @@ func init() {
 	if err != nil {
 		panic(fmt.Errorf("models.HexToAccountAddress error: %v", err))
 	}
+
+	user2, err = models.HexToAccountAddress(User2Addr)
+	if err != nil {
+		panic(fmt.Errorf("models.HexToAccountAddress error: %v", err))
+	}
 }
 
 func main() {
@@ -79,13 +87,15 @@ func main() {
 
 	// do 10 times
 	// for i := 0; i < 10; i++ {
-	// 	mintShovelDig()
+	// 	mintShovelDig(user2, User2Seed)
 	// }
 
-	// resp, err := mint(aptosClient, user, "shovel")
-	// resp, err := mint(aptosClient, user, "urn")
-	// resp, err = dig(aptosClient, user)
-	resp, err := putBonePart(aptosClient, user, "arm")
+	// resp, err := mint(aptosClient, user2, User2Seed, "shovel")
+	// resp, err := mint(aptosClient, user2, User2Seed, "urn")
+	// resp, err := dig(aptosClient, user2, User2Seed)
+	// resp, err := putBonePart(aptosClient, user2, User2Seed, "leg")
+	// resp, err := rob(aptosClient, user2, User2Seed, user)
+	resp, err := rob(aptosClient, user, UserSeed, user2)
 	if err != nil {
 		panic(fmt.Errorf("error: %v", err))
 	}
@@ -113,7 +123,95 @@ func printAccountTokens(a models.AccountAddress) {
 	}
 }
 
-func putBonePart(client client.AptosClient, aa models.AccountAddress, part string) (*client.TransactionResp, error) {
+func rob(
+	client client.AptosClient, robber models.AccountAddress, seedStr string, victim models.AccountAddress,
+) (*client.TransactionResp, error) {
+	// get victom urn
+	victimTokens, err := tokenClient.ListAccountTokens(ctx, victim)
+	if err != nil {
+		return nil, fmt.Errorf("tokenClient.ListAccountTokens error: %v", err)
+	}
+
+	var victimUrn models.TokenID
+	curAsh := 0
+	for _, t := range victimTokens {
+		if t.ID.Name == "urn" {
+			if ash, ok := t.JSONProperties["ash"]; ok {
+				a, err := strconv.Atoi(ash)
+				if err != nil {
+					return nil, fmt.Errorf("strconv.Atoi error: %v", err)
+				}
+				if curAsh <= a {
+					victimUrn = t.ID
+				}
+			}
+		}
+	}
+	fmt.Printf("victimUrn: %+v\n", victimUrn)
+
+	// get robbber urn
+	robberTokens, err := tokenClient.ListAccountTokens(ctx, robber)
+	if err != nil {
+		return nil, fmt.Errorf("tokenClient.ListAccountTokens error: %v", err)
+	}
+
+	var robberUrn models.TokenID
+	for _, t := range robberTokens {
+		if t.ID.Name == "urn" {
+			robberUrn = t.ID
+		}
+	}
+	fmt.Printf("robberUrn: %+v\n", robberUrn)
+
+	accountInfo, err := aptosClient.GetAccount(ctx, robber.ToHex())
+	if err != nil {
+		panic(fmt.Errorf("aptosClient.GetAccount error: %v", err))
+	}
+
+	var tx models.Transaction
+	err = tx.SetChainID(ChainID).
+		SetSender(robber.ToHex()).
+		SetPayload(models.EntryFunctionPayload{
+			Module:   Urn2EarnModule,
+			Function: "rob",
+			Arguments: []interface{}{
+				uint64(robberUrn.PropertyVersion),
+				victim,
+				uint64(victimUrn.PropertyVersion),
+			},
+		}).
+		SetExpirationTimestampSecs(uint64(time.Now().Add(30 * time.Second).Unix())).
+		SetGasUnitPrice(GasPrice).
+		SetMaxGasAmount(DefaultMaxGasAmount).
+		SetSequenceNumber(accountInfo.SequenceNumber).Error()
+	if err != nil {
+		return nil, fmt.Errorf("set tx error: %v", err)
+	}
+
+	seed, err := hex.DecodeString(seedStr)
+	if err != nil {
+		return nil, fmt.Errorf("decode seed error: %v", err)
+	}
+	sender := models.NewSingleSigner(ed25519.NewKeyFromSeed(seed))
+	if err := sender.Sign(&tx).Error(); err != nil {
+		return nil, fmt.Errorf("sign tx error: %v", err)
+	}
+
+	_, err = client.SimulateTransaction(ctx, tx.UserTransaction, false, false)
+	if err != nil {
+		return nil, fmt.Errorf("simulate tx error: %w", err)
+	}
+
+	txResp, err := client.SubmitTransaction(ctx, tx.UserTransaction)
+	if err != nil {
+		return nil, fmt.Errorf("submit tx error: %w", err)
+	}
+
+	return txResp, nil
+
+}
+
+func putBonePart(client client.AptosClient, aa models.AccountAddress, seedStr, part string) (*client.TransactionResp, error) {
 	tokens, err := tokenClient.ListAccountTokens(ctx, aa)
 	if err != nil {
 		return nil, fmt.Errorf("tokenClient.ListAccountTokens error: %v", err)
@@ -163,7 +261,7 @@ func putBonePart(client client.AptosClient, aa models.AccountAddress, part strin
 		return nil, fmt.Errorf("set tx error: %v", err)
 	}
 
-	seed, err := hex.DecodeString(UserSeed)
+	seed, err := hex.DecodeString(seedStr)
 	if err != nil {
 		return nil, fmt.Errorf("decode seed error: %v", err)
 	}
@@ -185,12 +283,12 @@ func putBonePart(client client.AptosClient, aa models.AccountAddress, part strin
 	return txResp, nil
 }
 
-func mintShovelDig() {
-	printBalance()
+func mintShovelDig(user models.AccountAddress, seedStr string) {
+	// printBalance()
 	ob := getBalance(owner)
 	ub := getBalance(user)
 
-	txResp, err := mint(aptosClient, user, "shovel")
+	txResp, err := mint(aptosClient, user, seedStr, "shovel")
 	if err != nil {
 		panic(fmt.Errorf("mint shovel error: %v", err))
 	}
@@ -200,7 +298,7 @@ func mintShovelDig() {
 	fmt.Printf("owner balance diff %f\n", (getBalance(owner)-ob)/Decimal)
 	fmt.Printf("user balance diff %f\n", (getBalance(user)-ub)/Decimal)
 
-	digResp, err := dig(aptosClient, user)
+	digResp, err := dig(aptosClient, user, seedStr)
 	if err != nil {
 		panic(fmt.Errorf("dig error: %v", err))
 	}
@@ -254,7 +352,7 @@ func printBalance() {
 	printCoinRes(userBalance)
 }
 
-func dig(client client.AptosClient, aa models.AccountAddress) (*client.TransactionResp, error) {
+func dig(client client.AptosClient, aa models.AccountAddress, seedStr string) (*client.TransactionResp, error) {
 	accountInfo, err := aptosClient.GetAccount(ctx, aa.ToHex())
 	if err != nil {
 		return nil, fmt.Errorf("get account error: %v", err)
@@ -277,7 +375,7 @@ func dig(client client.AptosClient, aa models.AccountAddress) (*client.Transacti
 		return nil, fmt.Errorf("build tx error: %v", err)
 	}
 
-	seed, err := hex.DecodeString(UserSeed)
+	seed, err := hex.DecodeString(seedStr)
 	if err != nil {
 		return nil, fmt.Errorf("decode seed error: %v", err)
 	}
@@ -294,7 +392,7 @@ func dig(client client.AptosClient, aa models.AccountAddress) (*client.Transacti
 	return txResp, nil
 }
 
-func mint(client client.AptosClient, aa models.AccountAddress, obj string) (*client.TransactionResp, error) {
+func mint(client client.AptosClient, aa models.AccountAddress, seedStr, obj string) (*client.TransactionResp, error) {
 	accountInfo, err := aptosClient.GetAccount(ctx, aa.ToHex())
 	if err != nil {
 		return nil, fmt.Errorf("get account error: %v", err)
@@ -327,7 +425,7 @@ func mint(client client.AptosClient, aa models.AccountAddress, obj string) (*cli
 		return nil, fmt.Errorf("build tx error: %v", err)
 	}
 
-	seed, err := hex.DecodeString(UserSeed)
+	seed, err := hex.DecodeString(seedStr)
 	if err != nil {
 		return nil, fmt.Errorf("decode seed error: %v", err)
 	}

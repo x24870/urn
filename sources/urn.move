@@ -213,6 +213,7 @@ module owner::urn {
         urn_been_robbed: TokenId,
     ): u8{
         let fillness = get_ash_fullness(urn_been_robbed, victim);
+        // TODO make sure high > low
         let robbed = rand_u8_range_no_sender(0, fillness); // TODO: how much ash to rob?
         fillness = fillness - robbed;
 

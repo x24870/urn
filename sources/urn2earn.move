@@ -221,6 +221,34 @@ module owner::urn_to_earn {
         token_id
     }
 
+    // TODO: write test
+    public entry fun random_rob(robber: &signer, prop_ver: u64) acquires UrnToEarnConfig {
+        let resource = get_resource_account();
+        let creator = signer::address_of(&resource);
+        let collection = string::utf8(COLLECTION_NAME);
+        let urn_token_name = string::utf8(urn::get_urn_token_name());
+
+        let robber_urn = token::create_token_id_raw(creator, collection, urn_token_name, prop_ver);
+        let (_, _) = knife::random_rob(robber, robber_urn, &resource);
+    }
+
+    // TODO: write test
+    public entry fun rob(
+        robber: &signer, 
+        robber_prop_ver: u64, 
+        victim_addr: address, 
+        victim_prop_ver: u64
+    ) acquires UrnToEarnConfig {
+        let resource = get_resource_account();
+        let creator = signer::address_of(&resource);
+        let collection = string::utf8(COLLECTION_NAME);
+        let urn_token_name = string::utf8(urn::get_urn_token_name());
+
+        let robber_urn = token::create_token_id_raw(creator, collection, urn_token_name, robber_prop_ver);
+        let victim_urn = token::create_token_id_raw(creator, collection, urn_token_name, victim_prop_ver);
+        let (_, _) = knife::rob(robber, robber_urn, victim_addr, victim_urn, &resource);
+    }
+
     public entry fun reincarnate(sign: &signer, urn_prop_ver: u64) {
         let creator = @owner;
         let collection = string::utf8(COLLECTION_NAME);
