@@ -130,6 +130,10 @@ module owner::urn_to_earn {
     }
 
     fun mint_urn_internal(sign: &signer): TokenId acquires UrnToEarnConfig {
+        // create a resource to record the history of beeen robbed
+        // if user got the urn not by minting, they need to create this resource by themselves
+        knife::create_rob_history(sign);
+
         transfer<AptosCoin>(sign, @owner, URN_PRICE);
         let resource = get_resource_account();
         let token_id = urn::mint(sign, &resource);

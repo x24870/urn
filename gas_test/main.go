@@ -39,6 +39,7 @@ var user models.AccountAddress
 var user2 models.AccountAddress
 
 var Urn2EarnModule models.Module
+var KnifeModule models.Module
 
 var ctx = context.Background()
 
@@ -71,6 +72,11 @@ func init() {
 		Name:    "urn_to_earn",
 	}
 
+	KnifeModule = models.Module{
+		Address: owner,
+		Name:    "knife",
+	}
+
 	user, err = models.HexToAccountAddress(UserAddr)
 	if err != nil {
 		panic(fmt.Errorf("models.HexToAccountAddress error: %v", err))
@@ -83,17 +89,17 @@ func init() {
 }
 
 func main() {
-	// printAccountTokens(user)
+	printAccountTokens(user)
 
 	// do 10 times
 	// for i := 0; i < 10; i++ {
-	// 	mintShovelDig(user2, User2Seed)
+	// 	mintShovelDig(user, UserSeed)
 	// }
 
 	// resp, err := mint(aptosClient, user2, User2Seed, "shovel")
-	// resp, err := mint(aptosClient, user2, User2Seed, "urn")
+	// resp, err := mint(aptosClient, user, UserSeed, "urn")
 	// resp, err := dig(aptosClient, user2, User2Seed)
-	// resp, err := putBonePart(aptosClient, user2, User2Seed, "leg")
+	// resp, err := putBonePart(aptosClient, user2, User2Seed, "arm")
 	// resp, err := rob(aptosClient, user2, User2Seed, user)
 	resp, err := rob(aptosClient, user, UserSeed, user2)
 	if err != nil {
@@ -101,7 +107,8 @@ func main() {
 	}
 	aptosClient.WaitForTransaction(ctx, resp.Hash)
 
-	// printAccountTokens(user)
+	fmt.Println("-------- transaction hash:", resp.Hash)
+	printAccountTokens(user)
 }
 
 // pretty print account tokens
@@ -121,6 +128,52 @@ func printAccountTokens(a models.AccountAddress) {
 			}
 		}
 	}
+}
+
+func create_rob_history_ressource(
+	client client.AptosClient, user models.AccountAddress, seedStr string,
+) (*client.TransactionResp, error) {
+	accountInfo, err := aptosClient.GetAccount(ctx, user.ToHex())
+	if err != nil {
+		panic(fmt.Errorf("aptosClient.GetAccount error: %v", err))
+	}
+
+	var tx models.Transaction
+	err = tx.SetChainID(ChainID).
+		SetSender(user.ToHex()).
+		SetPayload(models.EntryFunctionPayload{
+			Module:    KnifeModule,
+			Function:  "create_rob_history_manually",
+			Arguments: []interface{}{},
+		}).
+		SetExpirationTimestampSecs(uint64(time.Now().Add(30 * time.Second).Unix())).
+		SetGasUnitPrice(GasPrice).
+		SetMaxGasAmount(DefaultMaxGasAmount).
+		SetSequenceNumber(accountInfo.SequenceNumber).Error()
+	if err != nil {
+		return nil, fmt.Errorf("set tx error: %v", err)
+	}
+
+	seed, err := hex.DecodeString(seedStr)
+	if err != nil {
+		return nil, fmt.Errorf("decode seed error: %v", err)
+	}
+	sender := models.NewSingleSigner(ed25519.NewKeyFromSeed(seed))
+	if err := sender.Sign(&tx).Error(); err != nil {
+		return nil, fmt.Errorf("sign tx error: %v", err)
+	}
+
+	_, err = client.SimulateTransaction(ctx, tx.UserTransaction, false, false)
+	if err != nil {
+		return nil, fmt.Errorf("simulate tx error: %w", err)
+	}
+
+	txResp, err := client.SubmitTransaction(ctx, tx.UserTransaction)
+	if err != nil {
+		return nil, fmt.Errorf("submit tx error: %w", err)
+	}
+
+	return txResp, nil
 }
 
 func rob(

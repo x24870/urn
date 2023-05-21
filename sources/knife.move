@@ -3,6 +3,8 @@ module owner::knife {
     use std::string::{Self, String};
     use std::bcs;
     use std::option;
+    use aptos_framework::account;
+    use aptos_framework::event::{Self, EventHandle};
     use aptos_token::token::{Self, TokenId};
     use owner::iterable_table::{Self, borrow_iter, head_key, length};
     use owner::pseudorandom::{rand_u64_range_no_sender};
@@ -23,6 +25,17 @@ module owner::knife {
         collection: string::String,
         name: string::String,
         table: iterable_table::IterableTable<address, TokenId>,
+    }
+
+    struct RobHistory has store, key {
+        been_robbed_events: EventHandle<BeenRobbedEvent>,
+    }
+
+    struct BeenRobbedEvent has drop, store {
+        robber: address,
+        success: bool,
+        token_id: TokenId,
+        amount: u8,
     }
 
     const ENOT_AUTHORIZED: u64 = 1;
@@ -84,6 +97,19 @@ module owner::knife {
         return token_data_id
     }
 
+    public entry fun create_rob_history_manually(sign: &signer) {
+        create_rob_history(sign);
+    }
+
+    // TODO: when to call this function?
+    // create RobHistory resource to enable showing the history of been robbed
+    public fun create_rob_history(sign: &signer) {
+        if (!exists<RobHistory>(signer::address_of(sign))) {
+            move_to(sign, RobHistory {
+                been_robbed_events: account::new_event_handle<BeenRobbedEvent>(sign),
+            });
+        }
+    }
 
     public fun destroy_knife(sender: &signer) acquires KnifeMinter {
         let knife_minter = borrow_global<KnifeMinter>(@owner);
@@ -136,7 +162,8 @@ module owner::knife {
         sender: &signer, 
         urn: TokenId,
         resource: &signer
-    ):(TokenId, u8) acquires KnifeMinter {
+    ):(TokenId, u8) acquires KnifeMinter, RobHistory {
+        
         // burn knife token
         destroy_knife(sender);
         let km = borrow_global_mut<KnifeMinter>(@owner);
@@ -159,6 +186,20 @@ module owner::knife {
         let amount = urn::rand_drain(resource, *option::borrow(&key), val);
         urn = urn::fill(sender, resource, urn, amount);
 
+        // emit been robbed event
+        if (exists<RobHistory>(*option::borrow(&key))) {
+            let brh = borrow_global_mut<RobHistory>(*option::borrow(&key));
+            event::emit_event<BeenRobbedEvent>(
+                &mut brh.been_robbed_events,
+                BeenRobbedEvent { 
+                    robber: signer::address_of(sender),
+                    success: true, // TODO: implement rob failed
+                    token_id: val,
+                    amount: amount,
+                },
+            );
+        };
+
         return (urn, amount)
     }
 
@@ -168,7 +209,7 @@ module owner::knife {
         victim_addr: address,
         vimtim_urn: TokenId,
         resource: &signer
-    ):(TokenId, u8) acquires KnifeMinter {
+    ):(TokenId, u8) acquires KnifeMinter, RobHistory {
         // burn knife token
         destroy_knife(sender);
         let km = borrow_global_mut<KnifeMinter>(@owner);
@@ -178,6 +219,20 @@ module owner::knife {
         // rob
         let amount = urn::rand_drain(resource, victim_addr, vimtim_urn);
         urn = urn::fill(sender, resource, urn, amount);
+
+        // emit been robbed event
+        if (exists<RobHistory>(victim_addr)) {
+            let brh = borrow_global_mut<RobHistory>(victim_addr);
+            event::emit_event<BeenRobbedEvent>(
+                &mut brh.been_robbed_events,
+                BeenRobbedEvent { 
+                    robber: signer::address_of(sender),
+                    success: true, // TODO: implement rob failed
+                    token_id: vimtim_urn,
+                    amount: amount,
+                },
+            );
+        };
 
         // TODO: add robber to victim table
         return (urn, amount)
