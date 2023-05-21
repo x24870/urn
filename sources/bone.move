@@ -152,7 +152,7 @@ module owner::bone {
             string::utf8(BURNABLE_BY_OWNER)
         ];
         let default_vals = vector<vector<u8>>[
-            bcs::to_bytes<string::String>(&string::utf8(b"arm")), 
+            bcs::to_bytes<string::String>(&tokendata_name), 
             bcs::to_bytes<string::String>(&material), 
             bcs::to_bytes<u8>(&0), 
             bcs::to_bytes<bool>(&true)
