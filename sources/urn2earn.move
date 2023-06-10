@@ -272,8 +272,8 @@ module owner::urn_to_earn {
     use owner::pseudorandom;
     #[test_only]
     use aptos_framework::genesis;
-    // #[test_only]
-    // use aptos_framework::debug;
+    #[test_only]
+    use aptos_framework::debug;
     #[test_only]
     use aptos_framework::option;
     #[test_only]
@@ -663,6 +663,7 @@ module owner::urn_to_earn {
         user_fullness_before = urn::get_ash_fullness(user_urn, user_addr);
         let (robber_urn, amount) = knife::rob(robber, robber_urn, user_addr, user_urn, &resource);
         assert!(token::balance_of(robber_addr, knife_token_id) == 0, EINSUFFICIENT_BALANCE);
+        debug::print(&amount);
         assert!(urn::get_ash_fullness(user_urn, user_addr)+amount==user_fullness_before, ETOKEN_PROP_MISMATCH);
         assert!(urn::get_ash_fullness(robber_urn, robber_addr)-amount==rob_fullness_before, ETOKEN_PROP_MISMATCH);
     }

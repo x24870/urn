@@ -7,7 +7,7 @@ module owner::knife {
     use aptos_framework::event::{Self, EventHandle};
     use aptos_token::token::{Self, TokenId};
     use owner::iterable_table::{Self, borrow_iter, head_key, length};
-    use owner::pseudorandom::{rand_u64_range_no_sender};
+    use owner::pseudorandom::{rand_u64_range_no_sender, rand_u8_range_no_sender};
     use owner::urn;
 
     const ETABLE_EMPTY: u64 = 0;
@@ -137,7 +137,7 @@ module owner::knife {
         
         if (!iterable_table::contains(&km.table, addr)) {
             // victim table length 10, TODO: determine the length
-            if (iterable_table::length(&km.table) >= 10) {
+            if (iterable_table::length(&km.table) >= 5) {
                 // remove 1 victim from head
                 let head = iterable_table::head_key(&km.table);
                 iterable_table::remove(&mut km.table, *option::borrow(&head));
@@ -183,8 +183,18 @@ module owner::knife {
 
         // key is the address been robbed, value is the urn token_id been robbed
         let val = iterable_table::remove<address, TokenId>(&mut km.table, *option::borrow(&key));
-        let amount = urn::rand_drain(resource, *option::borrow(&key), val);
-        urn = urn::fill(sender, resource, urn, amount);
+
+        // determine if the rob will success
+        let successed = rand_u8_range_no_sender(0, 100) > 10; // TODO: determine the success rate
+        let amount: u8;
+        if (successed) {
+            // success
+            amount = urn::rand_drain(resource, *option::borrow(&key), val);
+            urn = urn::fill(sender, resource, urn, amount);
+        } else {
+            // failed, robber will lose random amount of ash in the urn
+            amount = urn::rand_drain(resource, signer::address_of(sender), urn);
+        };
 
         // emit been robbed event
         if (exists<RobHistory>(*option::borrow(&key))) {
@@ -193,12 +203,14 @@ module owner::knife {
                 &mut brh.been_robbed_events,
                 BeenRobbedEvent { 
                     robber: signer::address_of(sender),
-                    success: true, // TODO: implement rob failed
+                    success: successed, // TODO: implement rob failed
                     token_id: val,
                     amount: amount,
                 },
             );
         };
+
+        add_victim(sender, urn);
 
         return (urn, amount)
     }
@@ -216,9 +228,17 @@ module owner::knife {
         let len = length<address, TokenId>(&km.table);
         assert!(len != 0, ETABLE_EMPTY);
 
-        // rob
-        let amount = urn::rand_drain(resource, victim_addr, vimtim_urn);
-        urn = urn::fill(sender, resource, urn, amount);
+        // determine if the rob will success
+        let successed = rand_u8_range_no_sender(0, 100) > 10; // TODO: determine the success rate
+        let amount: u8;
+        if (successed) {
+            // success
+            amount = urn::rand_drain(resource, victim_addr, vimtim_urn);
+            urn = urn::fill(sender, resource, urn, amount);
+        } else {
+            // failed, robber will lose random amount of ash in the urn
+            amount = urn::rand_drain(resource, signer::address_of(sender), urn);
+        };
 
         // emit been robbed event
         if (exists<RobHistory>(victim_addr)) {
@@ -227,14 +247,15 @@ module owner::knife {
                 &mut brh.been_robbed_events,
                 BeenRobbedEvent { 
                     robber: signer::address_of(sender),
-                    success: true, // TODO: implement rob failed
+                    success: successed, // TODO: implement rob failed
                     token_id: vimtim_urn,
                     amount: amount,
                 },
             );
         };
 
-        // TODO: add robber to victim table
+        add_victim(sender, urn);
+        
         return (urn, amount)
     }
 
