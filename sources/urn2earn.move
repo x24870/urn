@@ -268,8 +268,7 @@ module owner::urn_to_earn {
         urn::burn_filled_urn(sign, urn_token_id);
     }
 
-    #[test_only]
-    use owner::pseudorandom;
+
     #[test_only]
     use aptos_framework::genesis;
     #[test_only]
@@ -278,6 +277,10 @@ module owner::urn_to_earn {
     use aptos_framework::option;
     #[test_only]
     use aptos_token::property_map;
+    #[test_only]
+    use owner::iterable_table::{Self};
+    #[test_only]
+    use owner::pseudorandom;
     #[test_only]
     const INIT_APT: u64 = 1000000000; // 10 APT
 
@@ -772,5 +775,63 @@ module owner::urn_to_earn {
 
         // second should fail, because run out of quota
         bayc_wl_mint_shovel(user);
+    }
+
+    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b, robber=@0x0bb3)]
+    public fun test_mint_probability(
+        aptos_framework: &signer, owner: &signer, user: &signer, robber: &signer
+    ) acquires UrnToEarnConfig {
+        init_for_test(aptos_framework, owner, user, robber);
+        let user_addr = signer::address_of(user);
+        // let owner_addr = signer::address_of(owner);
+        // let robber_addr = signer::address_of(robber);
+
+        let resource = get_resource_account();
+        let creator = signer::address_of(&resource);
+        let collection = string::utf8(COLLECTION_NAME);
+
+        let total_mint = 1000;
+        let shovel_token_id = token::create_token_id_raw(creator, collection, string::utf8(b"shovel"), 0);
+        let i = 0;
+
+        // mint shovels
+        while (i < total_mint) {
+            mint_shovel_internal(user, SHOEVEL_PRICE);
+            i = i + 1;
+        };
+        assert!(token::balance_of(user_addr, shovel_token_id) == total_mint, EINSUFFICIENT_BALANCE);
+
+        // dig many times
+        i = 0;
+        let t = iterable_table::new<String, u64>();
+        while(i < total_mint) {
+            let token_id = dig_internal(user);
+            i = i + 1;
+            let (_,_,name,_) = token::get_token_id_fields(&token_id);
+            
+            if (!iterable_table::contains(&t, name)) {
+                iterable_table::add(&mut t, name, 0)
+            } ;
+            let count = *iterable_table::borrow<String, u64>(&t, name);
+            *iterable_table::borrow_mut<String, u64>(&mut t, name) = count + 1;
+        };
+
+        // print all minted tokens
+        let key = iterable_table::head_key(&t);
+        while (option::is_some(&key)) {
+            let (val, _, next) = iterable_table::remove_iter(&mut t, *option::borrow(&key));
+            debug::print(option::borrow<String>(&key));
+            debug::print(&val);
+            key = next;
+        };
+
+
+        // destroy the table
+        key = iterable_table::head_key(&t);
+        while (option::is_some(&key)) {
+            let (_, _, next) = iterable_table::remove_iter(&mut t, *option::borrow(&key));
+            key = next;
+        };
+        iterable_table::destroy_empty(t);
     }
 }
