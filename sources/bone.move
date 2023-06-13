@@ -43,18 +43,17 @@ module owner::bone {
     const EINVALID_BONE_PART: u64 = 6;
 
     const TOKEN_NAME: vector<u8> = b"bone";
-    const TOKEN_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmSioUrHchtStNHXCHSzS8M6HVHDV8dPojgwF4EqpFBtf5/urn.jpg";
 
-    const SKULL_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmbQuPgdA29Mf34Pqf2gJjqC63qYQX4KZF9e8xVffCZCqw/normal_skull.jpg";
-    const CHEST_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmbQuPgdA29Mf34Pqf2gJjqC63qYQX4KZF9e8xVffCZCqw/normal_ribs.jpg";
-    const HIP_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmbQuPgdA29Mf34Pqf2gJjqC63qYQX4KZF9e8xVffCZCqw/normal_pelvis.jpg";
-    const LEG_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmbQuPgdA29Mf34Pqf2gJjqC63qYQX4KZF9e8xVffCZCqw/normal_leg.jpg";
-    const ARM_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmbQuPgdA29Mf34Pqf2gJjqC63qYQX4KZF9e8xVffCZCqw/normal_hand.jpg";
-    const GOLDEN_SKULL_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmbQuPgdA29Mf34Pqf2gJjqC63qYQX4KZF9e8xVffCZCqw/golden_skull.jpg";
-    const GOLDEN_CHEST_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmbQuPgdA29Mf34Pqf2gJjqC63qYQX4KZF9e8xVffCZCqw/golden_ribs.jpg"; 
-    const GOLDEN_HIP_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmbQuPgdA29Mf34Pqf2gJjqC63qYQX4KZF9e8xVffCZCqw/golden_pelvis.jpg";
-    const GOLDEN_LEG_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmbQuPgdA29Mf34Pqf2gJjqC63qYQX4KZF9e8xVffCZCqw/golden_leg.jpg";
-    const GOLDEN_ARM_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmbQuPgdA29Mf34Pqf2gJjqC63qYQX4KZF9e8xVffCZCqw/golden_hand.jpg";
+    const SKULL_URL: vector<u8> = b"https://v4xxyxp44dli3zvkzpunkfu3fndxih3fhpwwpalhfwg4syjgagra.arweave.net/ry98Xfzg1o3mqsvo1RabK0d0H2U77WeBZy2NyWEmAaI";
+    const CHEST_URL: vector<u8> = b"https://7tokwurasnk25hjwrvxlxzzg4n3toumofxwumpfnimucyavax3ea.arweave.net/_NyrUiCTVa6dNo1uu-cm43c3UY4t7UY8rUMoLAKgvsg";
+    const HIP_URL: vector<u8> = b"TODO:add file to ardrive";
+    const LEG_URL: vector<u8> = b"https://cdalk6xvuva5ga6fsqn5xlxluo3myizh46f5tajotjtt3olmmm2q.arweave.net/EMC1evWlQdMDxZQb267ro7bMIyfni9mBLppnPblsYzU";
+    const ARM_URL: vector<u8> = b"https://llwl6rue3cqcl7umhelxlnhzyzd6zrppvxoy33p63tqhcd2zmzoq.arweave.net/Wuy_RoTYoCX-jDkXdbT5xkfsxe-t3Y3t_tzgcQ9ZZl0";
+    const GOLDEN_SKULL_URL: vector<u8> = b"https://55muo5a3stnrim4obh3xg32fclcemzmemijpueuj4iksy5zf52ea.arweave.net/71lHdBuU2xQzjgn3c29FEsRGZYRiEvoSieIVLHcl7og";
+    const GOLDEN_CHEST_URL: vector<u8> = b"https://lowky5ptxozjvh2nakz4w5cvhhgu225kmd6exb2icfxbcgu6pvja.arweave.net/W6ysdfO7spqfTQKzy3RVOc1Na6pg_EuHSBFuERqefVI"; 
+    const GOLDEN_HIP_URL: vector<u8> = b"https://fm63sjau7yuyh7uvpplqv7cutx34gjcv74lhj4ga4ozdnpih7k6q.arweave.net/Kz25JBT-KYP-lXvXCvxUnffDJFX_FnTwwOOyNr0H-r0";
+    const GOLDEN_LEG_URL: vector<u8> = b"https://skeg7acy54lxdloupzbeakocuzbkajyepcty4w4rwzc7jv2hindq.arweave.net/kohvgFjvF3Gt1H5CQCnCpkKgJwR4p45bkbZF9NdHQ0c";
+    const GOLDEN_ARM_URL: vector<u8> = b"https://u3bllzquqmt4maxmbbhe2tisqusxqwu4kb7l6e7yrtzlcoaxc3na.arweave.net/psK15hSDJ8YC7AhOTU0ShSV4WpxQfr8T-IzysTgXFto";
 
     const POINT_PROP_NAME: vector<u8> = b"point";
     const MATERIAL_PROP_NAME: vector<u8> = b"material";

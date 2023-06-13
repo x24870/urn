@@ -21,7 +21,7 @@ module owner::shovel {
     const EMINTING_NOT_ENABLED: u64 = 3;
 
     const TOKEN_NAME: vector<u8> = b"shovel";
-    const TOKEN_URL: vector<u8> = b"https://gateway.pinata.cloud/ipfs/QmbQuPgdA29Mf34Pqf2gJjqC63qYQX4KZF9e8xVffCZCqw/shovel.jpg";
+    const TOKEN_URL: vector<u8> = b"https://6a42ouwg4jcg35owuyyupll6awryvbhg56oxwmmf3lnxyxqpsrma.arweave.net/8DmnUsbiRG311qYxR61-BaOKhObvnXsxhdrbfF4PlFg";
 
     public(friend) fun init_shovel(sender: &signer, resource: &signer, collection_name: String) {
         // Don't run setup more than once
