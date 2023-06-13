@@ -46,7 +46,7 @@ module owner::bone {
 
     const SKULL_URL: vector<u8> = b"https://v4xxyxp44dli3zvkzpunkfu3fndxih3fhpwwpalhfwg4syjgagra.arweave.net/ry98Xfzg1o3mqsvo1RabK0d0H2U77WeBZy2NyWEmAaI";
     const CHEST_URL: vector<u8> = b"https://7tokwurasnk25hjwrvxlxzzg4n3toumofxwumpfnimucyavax3ea.arweave.net/_NyrUiCTVa6dNo1uu-cm43c3UY4t7UY8rUMoLAKgvsg";
-    const HIP_URL: vector<u8> = b"https://jrtrmmz7xumexxjef27oo3okjx6fbhvrsa6ukcqdvn74rjqgr7ga.arweave.net/TGcWMz-9GEvdJC6-523KTfxQnrGQPUUKA6t_yKYGj8w";
+    const HIP_URL: vector<u8> = b"https://fhmmvnetsu3plemyuwuz6vvwzf6g3kfom6d7mq5zet5bxlnipvpq.arweave.net/KdjKtJOVNvWRmKWpn1a2yXxtqK5nh_ZDuST6G62ofV8";
     const LEG_URL: vector<u8> = b"https://cdalk6xvuva5ga6fsqn5xlxluo3myizh46f5tajotjtt3olmmm2q.arweave.net/EMC1evWlQdMDxZQb267ro7bMIyfni9mBLppnPblsYzU";
     const ARM_URL: vector<u8> = b"https://llwl6rue3cqcl7umhelxlnhzyzd6zrppvxoy33p63tqhcd2zmzoq.arweave.net/Wuy_RoTYoCX-jDkXdbT5xkfsxe-t3Y3t_tzgcQ9ZZl0";
     const GOLDEN_SKULL_URL: vector<u8> = b"https://55muo5a3stnrim4obh3xg32fclcemzmemijpueuj4iksy5zf52ea.arweave.net/71lHdBuU2xQzjgn3c29FEsRGZYRiEvoSieIVLHcl7og";
