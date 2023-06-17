@@ -41,16 +41,25 @@ module owner::weighted_probability {
     const CHEST_18_W:   u64 = 55;
     const SKULL_21_W:   u64 = 10;
     const SKULL_26_W:   u64 = 25;
-    const G_SHARD_W:    u64 = 180;
-    const G_ARM_2_W:    u64 = 70;
-    const G_LEG_5_W:    u64 = 20;
-    const G_LEG_7_W:    u64 = 20;
-    const G_HIP_11_W:   u64 = 10;
-    const G_HIP_14_W:   u64 = 10;
-    const G_CHEST_17_W: u64 = 10;
-    const G_SKULL_21_W: u64 = 5;
+    // const G_SHARD_W:    u64 = 180;
+    // const G_ARM_2_W:    u64 = 70;
+    // const G_LEG_5_W:    u64 = 20;
+    // const G_LEG_7_W:    u64 = 20;
+    // const G_HIP_11_W:   u64 = 10;
+    // const G_HIP_14_W:   u64 = 10;
+    // const G_CHEST_17_W: u64 = 10;
+    // const G_SKULL_21_W: u64 = 5;
+    // const SUM_OF_W:     u64 = 820;
+    const G_SHARD_W:    u64 = 90;
+    const G_ARM_2_W:    u64 = 35;
+    const G_LEG_5_W:    u64 = 10;
+    const G_LEG_7_W:    u64 = 10;
+    const G_HIP_11_W:   u64 = 5;
+    const G_HIP_14_W:   u64 = 5;
+    const G_CHEST_17_W: u64 = 5;
+    const G_SKULL_21_W: u64 = 2;
     const KNIFE_W:      u64 = 130;
-    const SUM_OF_W:     u64 = 820;
+    const SUM_OF_W:     u64 = 657;
 
     // accumulate the weight
     struct AccumulateWeight has store, key {

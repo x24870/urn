@@ -692,7 +692,7 @@ module owner::urn_to_earn {
         let shard_token_id = shard::mint(user, &resource);
 
         assert!(token::balance_of(user_addr, knife_token_id) > 15, EINSUFFICIENT_BALANCE);
-        assert!(token::balance_of(user_addr, shard_token_id) > 20, EINSUFFICIENT_BALANCE);
+        assert!(token::balance_of(user_addr, shard_token_id) > 10, EINSUFFICIENT_BALANCE);
     }
 
     #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b, robber=@0x0bb3)]
