@@ -102,6 +102,11 @@ add_collection:
         --compiled-script-path build/urn_to_earn/bytecode_scripts/add_collection.mv \
         --sender-account ${profile} --profile ${profile} \
 
+transfer_knife:
+	aptos move run-script --assume-yes \
+        --compiled-script-path build/urn_to_earn/bytecode_scripts/transfer_knife.mv \
+        --sender-account ${profile} --profile ${profile} \
+
 get_collection_left_quota:
 	curl --request POST \
 	--url ${REST_URL}/v1/view \

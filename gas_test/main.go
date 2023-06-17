@@ -92,22 +92,23 @@ func main() {
 	printAccountTokens(user)
 
 	// do 10 times
-	// for i := 0; i < 10; i++ {
-	// 	mintShovelDig(user, UserSeed)
-	// }
+	for i := 0; i < 100; i++ {
+		mintShovelDig(user2, User2Seed)
+	}
 
 	// resp, err := mint(aptosClient, user2, User2Seed, "shovel")
 	// resp, err := mint(aptosClient, user, UserSeed, "urn")
 	// resp, err := dig(aptosClient, user2, User2Seed)
 	// resp, err := putBonePart(aptosClient, user2, User2Seed, "arm")
 	// resp, err := rob(aptosClient, user2, User2Seed, user)
-	resp, err := rob(aptosClient, user, UserSeed, user2)
-	if err != nil {
-		panic(fmt.Errorf("error: %v", err))
-	}
-	aptosClient.WaitForTransaction(ctx, resp.Hash)
+	// resp, err := rob(aptosClient, user, UserSeed, user2)
+	// resp, err := random_rob(aptosClient, user, UserSeed)
+	// if err != nil {
+	// 	panic(fmt.Errorf("error: %v", err))
+	// }
+	// aptosClient.WaitForTransaction(ctx, resp.Hash)
 
-	fmt.Println("-------- transaction hash:", resp.Hash)
+	// fmt.Println("-------- transaction hash:", resp.Hash)
 	printAccountTokens(user)
 }
 
@@ -264,6 +265,69 @@ func rob(
 
 }
 
+func random_rob(
+	client client.AptosClient, robber models.AccountAddress, seedStr string,
+) (*client.TransactionResp, error) {
+	// get robbber urn
+	robberTokens, err := tokenClient.ListAccountTokens(ctx, robber)
+	if err != nil {
+		return nil, fmt.Errorf("tokenClient.ListAccountTokens error: %v", err)
+	}
+
+	var robberUrn models.TokenID
+	for _, t := range robberTokens {
+		if t.ID.Name == "urn" {
+			robberUrn = t.ID
+		}
+	}
+	fmt.Printf("robberUrn: %+v\n", robberUrn)
+
+	accountInfo, err := aptosClient.GetAccount(ctx, robber.ToHex())
+	if err != nil {
+		panic(fmt.Errorf("aptosClient.GetAccount error: %v", err))
+	}
+
+	var tx models.Transaction
+	err = tx.SetChainID(ChainID).
+		SetSender(robber.ToHex()).
+		SetPayload(models.EntryFunctionPayload{
+			Module:   Urn2EarnModule,
+			Function: "random_rob",
+			Arguments: []interface{}{
+				uint64(robberUrn.PropertyVersion),
+			},
+		}).
+		SetExpirationTimestampSecs(uint64(time.Now().Add(30 * time.Second).Unix())).
+		SetGasUnitPrice(GasPrice).
+		SetMaxGasAmount(DefaultMaxGasAmount).
+		SetSequenceNumber(accountInfo.SequenceNumber).Error()
+	if err != nil {
+		return nil, fmt.Errorf("set tx error: %v", err)
+	}
+
+	seed, err := hex.DecodeString(seedStr)
+	if err != nil {
+		return nil, fmt.Errorf("decode seed error: %v", err)
+	}
+	sender := models.NewSingleSigner(ed25519.NewKeyFromSeed(seed))
+	if err := sender.Sign(&tx).Error(); err != nil {
+		return nil, fmt.Errorf("sign tx error: %v", err)
+	}
+
+	_, err = client.SimulateTransaction(ctx, tx.UserTransaction, false, false)
+	if err != nil {
+		return nil, fmt.Errorf("simulate tx error: %w", err)
+	}
+
+	txResp, err := client.SubmitTransaction(ctx, tx.UserTransaction)
+	if err != nil {
+		return nil, fmt.Errorf("submit tx error: %w", err)
+	}
+
+	return txResp, nil
+
+}
+
 func putBonePart(client client.AptosClient, aa models.AccountAddress, seedStr, part string) (*client.TransactionResp, error) {
 	tokens, err := tokenClient.ListAccountTokens(ctx, aa)
 	if err != nil {
@@ -338,8 +402,8 @@ func putBonePart(client client.AptosClient, aa models.AccountAddress, seedStr, p
 
 func mintShovelDig(user models.AccountAddress, seedStr string) {
 	// printBalance()
-	ob := getBalance(owner)
-	ub := getBalance(user)
+	// ob := getBalance(owner)
+	// ub := getBalance(user)
 
 	txResp, err := mint(aptosClient, user, seedStr, "shovel")
 	if err != nil {
@@ -348,8 +412,8 @@ func mintShovelDig(user models.AccountAddress, seedStr string) {
 	aptosClient.WaitForTransaction(ctx, txResp.Hash)
 
 	fmt.Println("mint shovel success")
-	fmt.Printf("owner balance diff %f\n", (getBalance(owner)-ob)/Decimal)
-	fmt.Printf("user balance diff %f\n", (getBalance(user)-ub)/Decimal)
+	// fmt.Printf("owner balance diff %f\n", (getBalance(owner)-ob)/Decimal)
+	// fmt.Printf("user balance diff %f\n", (getBalance(user)-ub)/Decimal)
 
 	digResp, err := dig(aptosClient, user, seedStr)
 	if err != nil {
@@ -358,9 +422,10 @@ func mintShovelDig(user models.AccountAddress, seedStr string) {
 	aptosClient.WaitForTransaction(ctx, digResp.Hash)
 
 	fmt.Println("dig success")
-	fmt.Printf("owner balance diff %f\n", (getBalance(owner)-ob)/Decimal)
-	fmt.Printf("user balance diff %f\n", (getBalance(user)-ub)/Decimal)
-	printBalance()
+	aptosClient.WaitForTransaction(ctx, digResp.Hash)
+	// fmt.Printf("owner balance diff %f\n", (getBalance(owner)-ob)/Decimal)
+	// fmt.Printf("user balance diff %f\n", (getBalance(user)-ub)/Decimal)
+	// printBalance()
 }
 
 func getBalance(aa models.AccountAddress) float64 {

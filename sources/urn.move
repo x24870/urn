@@ -48,7 +48,7 @@ module owner::urn {
     const EURN_NOT_FULL: u64 = 7;
 
     const URN_TOKEN_NAME: vector<u8> = b"urn";
-    const GOLDEN_URN_TOKEN_NAME: vector<u8> = b"golden_urn";
+    const GOLDEN_URN_TOKEN_NAME: vector<u8> = b"golden urn";
     const ASH_PROP_NAME: vector<u8> = b"ash"; // TODO maybe update to ash
     const URN_URL: vector<u8> = b"https://swtj5ht5rztldcg6ag5wzbvr5jpbwaj2pvb7ojiq4dzk6kop5knq.arweave.net/laaenn2OZrGI3gG7bIax6l4bATp9Q_clEODyrynP6ps";
     const GOLDEN_URN_URL: vector<u8> = b"https://35hkq3ikzvppn4nyqyfrw452mmxx7oxguslawh46g4cd3x4rclna.arweave.net/306obQrNXvbxuIYLG3O6Yy9_uuaklgsfnjcEPd-REto";
@@ -103,7 +103,7 @@ module owner::urn {
         let token_mutate_config = token::create_token_mutability_config(
             &vector<bool>[ true, true, true, true, true ]); // max, uri, royalty, description, property
         let default_keys = vector<String>[
-            string::utf8(b"TYPE"), string::utf8(ASH_PROP_NAME), string::utf8(BURNABLE_BY_OWNER)
+            string::utf8(b"type"), string::utf8(ASH_PROP_NAME), string::utf8(BURNABLE_BY_OWNER)
         ];
         let default_vals = vector<vector<u8>>[
             bcs::to_bytes<string::String>(&tokendata_name), bcs::to_bytes<u8>(&0), bcs::to_bytes<bool>(&true)
