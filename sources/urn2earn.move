@@ -226,14 +226,14 @@ module owner::urn_to_earn {
     }
 
     // TODO: write test
-    public entry fun random_rob(robber: &signer, prop_ver: u64) acquires UrnToEarnConfig {
+    public entry fun random_rob(robber: &signer, prop_ver: u64, msg: String) acquires UrnToEarnConfig {
         let resource = get_resource_account();
         let creator = signer::address_of(&resource);
         let collection = string::utf8(COLLECTION_NAME);
         let urn_token_name = string::utf8(urn::get_urn_token_name());
 
         let robber_urn = token::create_token_id_raw(creator, collection, urn_token_name, prop_ver);
-        let (_, _) = knife::random_rob(robber, robber_urn, &resource);
+        let (_, _) = knife::random_rob(robber, robber_urn, &resource, msg);
     }
 
     // TODO: write test
@@ -241,7 +241,8 @@ module owner::urn_to_earn {
         robber: &signer, 
         robber_prop_ver: u64, 
         victim_addr: address, 
-        victim_prop_ver: u64
+        victim_prop_ver: u64,
+        msg: String
     ) acquires UrnToEarnConfig {
         let resource = get_resource_account();
         let creator = signer::address_of(&resource);
@@ -250,7 +251,7 @@ module owner::urn_to_earn {
 
         let robber_urn = token::create_token_id_raw(creator, collection, urn_token_name, robber_prop_ver);
         let victim_urn = token::create_token_id_raw(creator, collection, urn_token_name, victim_prop_ver);
-        let (_, _) = knife::rob(robber, robber_urn, victim_addr, victim_urn, &resource);
+        let (_, _) = knife::rob(robber, robber_urn, victim_addr, victim_urn, &resource, msg);
     }
 
     public entry fun reincarnate(sign: &signer, urn_prop_ver: u64) {
@@ -642,7 +643,8 @@ module owner::urn_to_earn {
         let knife_token_id = knife::mint(user, &resource);
         token::transfer(&resource, knife_token_id, robber_addr, 1);
 
-        let (robber_urn, amount) = knife::random_rob(robber, robber_urn, &resource);
+        let msg = string::utf8(b"test");
+        let (robber_urn, amount) = knife::random_rob(robber, robber_urn, &resource, msg);
         assert!(token::balance_of(robber_addr, knife_token_id) == 0, EINSUFFICIENT_BALANCE);
         assert!(urn::get_ash_fullness(user_urn, user_addr)+amount==50, ETOKEN_PROP_MISMATCH);
         assert!(urn::get_ash_fullness(robber_urn, robber_addr) == amount, ETOKEN_PROP_MISMATCH);
@@ -664,13 +666,46 @@ module owner::urn_to_earn {
         assert!(knife::contains_victim(user_addr), ETEST_ERROR);
 
         user_fullness_before = urn::get_ash_fullness(user_urn, user_addr);
-        let (robber_urn, amount) = knife::rob(robber, robber_urn, user_addr, user_urn, &resource);
+        let msg = string::utf8(b"test");
+        let (robber_urn, amount) = knife::rob(robber, robber_urn, user_addr, user_urn, &resource, msg);
         assert!(token::balance_of(robber_addr, knife_token_id) == 0, EINSUFFICIENT_BALANCE);
         debug::print(&amount);
         assert!(urn::get_ash_fullness(user_urn, user_addr)+amount==user_fullness_before, ETOKEN_PROP_MISMATCH);
         assert!(urn::get_ash_fullness(robber_urn, robber_addr)-amount==rob_fullness_before, ETOKEN_PROP_MISMATCH);
     }
 
+    #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b, robber=@0x0bb3)]
+    #[expected_failure(abort_code = knife::EMSG_TOO_LONG)]
+    public fun test_rob_msg_too_long(
+        aptos_framework: &signer, owner: &signer, user: &signer, robber: &signer
+    ) acquires UrnToEarnConfig {
+        init_for_test(aptos_framework, owner, user, robber);
+        let user_addr = signer::address_of(user);
+        let robber_addr = signer::address_of(robber);
+        let resource = get_resource_account();
+        
+        // mint urn for user and robber 
+        let user_urn = urn::mint(user, &resource);
+        token::transfer(&resource, user_urn, user_addr, 1);
+        let robber_urn = urn::mint(robber, &resource);
+        token::transfer(&resource, robber_urn, robber_addr, 1);
+
+        // mint test skulls
+        let bone_token_id_1 = bone::mint_50point_skull(owner, &resource);
+        token::transfer(&resource, bone_token_id_1, user_addr, 1);
+
+        user_urn = burn_and_fill_internal(user, user_urn, bone_token_id_1);
+        assert!(urn::get_ash_fullness(user_urn, user_addr) == 50, ETOKEN_PROP_MISMATCH);
+        assert!(token::balance_of(user_addr, bone_token_id_1) == 0, EINSUFFICIENT_BALANCE);
+        assert!(knife::contains_victim(user_addr), ETEST_ERROR);
+
+        // mint knife for robber
+        let knife_token_id = knife::mint(user, &resource);
+        token::transfer(&resource, knife_token_id, robber_addr, 1);
+
+        let msg = string::utf8(b"e9aff5bffdb5839f4e8fd7d9e846143806dd24559205228275138eae5a7348e3e9aff5bffdb5839f4e8fd7d9e846143806dd24559205228275138eae5a7348e3e9aff5bffdb5839f4e8fd7d9e846143806dd24559205228275138eae5a7348e3e9aff5bffdb5839f4e8fd7d9e846143806dd24559205228275138eae5a7348e3");
+        let (_, _) = knife::random_rob(robber, robber_urn, &resource, msg);
+    }
 
     #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b, robber=@0x0bb3)]
     public fun test_mint_by_weight(

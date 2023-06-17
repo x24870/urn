@@ -10,8 +10,9 @@ module owner::knife {
     use owner::pseudorandom::{rand_u64_range_no_sender, rand_u8_range_no_sender};
     use owner::urn;
 
-    const ETABLE_EMPTY: u64 = 0;
-    const ENO_VICTIM:   u64 = 1;
+    const ETABLE_EMPTY:  u64 = 0;
+    const ENO_VICTIM:    u64 = 1;
+    const EMSG_TOO_LONG: u64 = 2;
 
     const MAX_U64: u64 = 18446744073709551615;
     const BURNABLE_BY_OWNER: vector<u8> = b"TOKEN_BURNABLE_BY_OWNER";
@@ -36,6 +37,7 @@ module owner::knife {
         success: bool,
         token_id: TokenId,
         amount: u8,
+        msg: string::String,
     }
 
     const ENOT_AUTHORIZED: u64 = 1;
@@ -161,8 +163,11 @@ module owner::knife {
     public(friend) fun random_rob(
         sender: &signer, 
         urn: TokenId,
-        resource: &signer
+        resource: &signer,
+        msg: String
     ):(TokenId, u8) acquires KnifeMinter, RobHistory {
+        // check msg length
+        assert!(string::length(&msg) < 256, EMSG_TOO_LONG);
         
         // burn knife token
         destroy_knife(sender);
@@ -211,6 +216,7 @@ module owner::knife {
                     success: successed, // TODO: implement rob failed
                     token_id: val,
                     amount: amount,
+                    msg: msg,
                 },
             );
         };
@@ -225,8 +231,12 @@ module owner::knife {
         urn: TokenId,
         victim_addr: address,
         vimtim_urn: TokenId,
-        resource: &signer
+        resource: &signer,
+        msg: String
     ):(TokenId, u8) acquires KnifeMinter, RobHistory {
+        // check msg length
+        assert!(string::length(&msg) < 256, EMSG_TOO_LONG);
+
         // burn knife token
         destroy_knife(sender);
         let km = borrow_global_mut<KnifeMinter>(@owner);
@@ -255,6 +265,7 @@ module owner::knife {
                     success: successed, // TODO: implement rob failed
                     token_id: vimtim_urn,
                     amount: amount,
+                    msg: msg,
                 },
             );
         };
