@@ -136,8 +136,8 @@ module owner::knife {
 
         
         if (!iterable_table::contains(&km.table, addr)) {
-            // victim table length 10, TODO: determine the length
-            if (iterable_table::length(&km.table) >= 5) {
+            // victim table length 1000, TODO: determine the length
+            if (iterable_table::length(&km.table) >= 1000) {
                 // remove 1 victim from head
                 let head = iterable_table::head_key(&km.table);
                 iterable_table::remove(&mut km.table, *option::borrow(&head));
@@ -190,6 +190,11 @@ module owner::knife {
         if (successed) {
             // success
             amount = urn::rand_drain(resource, *option::borrow(&key), val);
+
+            let fillness = urn::get_ash_fullness(val, *option::borrow(&key));
+            if (fillness + amount > 100) {
+                amount = 100 - fillness;
+            };
             urn = urn::fill(sender, resource, urn, amount);
         } else {
             // failed, robber will lose random amount of ash in the urn

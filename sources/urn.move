@@ -49,7 +49,7 @@ module owner::urn {
 
     const URN_TOKEN_NAME: vector<u8> = b"urn";
     const GOLDEN_URN_TOKEN_NAME: vector<u8> = b"golden urn";
-    const ASH_PROP_NAME: vector<u8> = b"ash"; // TODO maybe update to ash
+    const ASH_PROP_NAME: vector<u8> = b"ash";
     const URN_URL: vector<u8> = b"https://swtj5ht5rztldcg6ag5wzbvr5jpbwaj2pvb7ojiq4dzk6kop5knq.arweave.net/laaenn2OZrGI3gG7bIax6l4bATp9Q_clEODyrynP6ps";
     const GOLDEN_URN_URL: vector<u8> = b"https://35hkq3ikzvppn4nyqyfrw452mmxx7oxguslawh46g4cd3x4rclna.arweave.net/306obQrNXvbxuIYLG3O6Yy9_uuaklgsfnjcEPd-REto";
 
@@ -214,6 +214,9 @@ module owner::urn {
     ): u8{
         let fillness = get_ash_fullness(urn_been_robbed, victim);
         // TODO make sure high > low, and low >= 0
+        if (fillness == 0) {
+            return 0 // workaround for that rand_u8_range_no_sender(0, 0) will abort
+        };
         let robbed = rand_u8_range_no_sender(0, fillness); // TODO: how much ash to rob?
         fillness = fillness - robbed;
 
