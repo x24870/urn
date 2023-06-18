@@ -157,6 +157,19 @@ module owner::urn_to_earn {
         burn_and_fill_internal(sign, urn_token_id, bone_token_id);
     }
 
+    public entry fun burn_and_fill_golden(
+        sign: &signer, urn_prop_ver: u64, bone_prop_ver: u64, part: String, 
+    ) acquires UrnToEarnConfig {
+        let resource = get_resource_account();
+        let creator = signer::address_of(&resource);
+        let collection = string::utf8(COLLECTION_NAME);
+        let urn_token_name = string::utf8(urn::get_golden_urn_token_name());
+
+        let urn_token_id = token::create_token_id_raw(creator, collection, urn_token_name, urn_prop_ver);
+        let bone_token_id = token::create_token_id_raw(creator, collection, part, bone_prop_ver);
+        burn_and_fill_internal(sign, urn_token_id, bone_token_id);
+    }
+
     fun burn_and_fill_internal(
         sign: &signer, urn_token_id: TokenId, bone_token_id: TokenId
     ): TokenId acquires UrnToEarnConfig {

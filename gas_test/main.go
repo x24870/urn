@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/portto/aptos-go-sdk/client"
@@ -19,14 +20,11 @@ const TokenName = "Aptos Token"
 const GasPrice = uint64(100)
 const DefaultMaxGasAmount = uint64(5000)
 
-// const OwnerAddr = "572941edfecf00c392ebf17fdb20729be425ecb5ce018999f19e7e2be534676f"
-// const UserAddr = "c0cc333a8a8b22a716afc439fbf52b2b8c2fabdabb9c425daf7937945749be6b"
-// const UserSeed = "6bbee9dce763f60c672f10a48a024d6e6d3306240095fe00e80afc972196b973"
-const OwnerAddr = "c9e7e612afec0ebf928da3a0f297ae53d3598d7d33cfac7b1072a605dd672961"
-const UserAddr = "7f3994fea07933ad0ee7e91a8494cbdaadb1c486a10d7ae79192d79befc27b4b"
-const UserSeed = "0b2374d9d786fa18aa7363f0a56b40bd6b00309c857a5658681f168e77bfb602"
-const User2Addr = "ff3613244bdcd00befa4388a79c77182b65ce76ab7d36b91b12baeadfdc70f0e"
-const User2Seed = "bb6cacefe5590e93f2ffd9c4b207b3f7adb368aa9ad32631b6f0b2dd6a2678a7"
+const OwnerAddr = "56260c419e8b176e0ca7f6d439b69180c2de2cb284d8dee24476f247af204492"
+const UserAddr = "b34c0314d90b2597f2531119601f4ad7fe9db4eb7671265e93c905a46aa92860"
+const UserSeed = "fa5356d432ca2a11838cb6d644e392cf78c3eb7ed8a6148c6165944972cacfde"
+const User2Addr = "d27433714a8f3b701d951f8eeb6be1f7743354ef0aec278028f77d9a8f72da59"
+const User2Seed = "82519badd7ec193a946d4ab3cb3b5d022c25c2a084d8d80606ae6ee826f3bac4"
 
 var aptosClient client.AptosClient
 var tokenClient client.TokenClient
@@ -92,23 +90,24 @@ func main() {
 	printAccountTokens(user)
 
 	// do 10 times
-	for i := 0; i < 100; i++ {
-		mintShovelDig(user2, User2Seed)
-	}
+	// for i := 0; i < 100; i++ {
+	// 	mintShovelDig(user2, User2Seed)
+	// }
 
 	// resp, err := mint(aptosClient, user2, User2Seed, "shovel")
 	// resp, err := mint(aptosClient, user, UserSeed, "urn")
+	// resp, err := mint(aptosClient, user2, User2Seed, "forge")
 	// resp, err := dig(aptosClient, user2, User2Seed)
-	// resp, err := putBonePart(aptosClient, user2, User2Seed, "arm")
+	resp, err := putBonePart(aptosClient, user2, User2Seed, "golden hip", true)
 	// resp, err := rob(aptosClient, user2, User2Seed, user)
 	// resp, err := rob(aptosClient, user, UserSeed, user2)
 	// resp, err := random_rob(aptosClient, user, UserSeed)
-	// if err != nil {
-	// 	panic(fmt.Errorf("error: %v", err))
-	// }
-	// aptosClient.WaitForTransaction(ctx, resp.Hash)
+	if err != nil {
+		panic(fmt.Errorf("error: %v", err))
+	}
+	aptosClient.WaitForTransaction(ctx, resp.Hash)
 
-	// fmt.Println("-------- transaction hash:", resp.Hash)
+	fmt.Println("-------- transaction hash:", resp.Hash)
 	printAccountTokens(user)
 }
 
@@ -328,10 +327,16 @@ func random_rob(
 
 }
 
-func putBonePart(client client.AptosClient, aa models.AccountAddress, seedStr, part string) (*client.TransactionResp, error) {
+func putBonePart(
+	client client.AptosClient, aa models.AccountAddress, seedStr, part string, is_golden bool,
+) (*client.TransactionResp, error) {
 	tokens, err := tokenClient.ListAccountTokens(ctx, aa)
 	if err != nil {
 		return nil, fmt.Errorf("tokenClient.ListAccountTokens error: %v", err)
+	}
+
+	if (is_golden && !strings.Contains(part, "golden")) || (!is_golden && strings.Contains(part, "golden")) {
+		return nil, fmt.Errorf("invalid pard")
 	}
 
 	var boneToken models.TokenID
@@ -346,8 +351,15 @@ func putBonePart(client client.AptosClient, aa models.AccountAddress, seedStr, p
 	fmt.Printf("boneToken: %+v\n", boneToken)
 
 	var urnToken models.TokenID
+	var urnTokenName string
+	if is_golden {
+		urnTokenName = "golden_urn"
+	} else {
+		urnTokenName = "urn"
+	}
+
 	for _, t := range tokens {
-		if t.ID.Name == "urn" {
+		if t.ID.Name == urnTokenName {
 			urnToken = t.ID
 		}
 	}
@@ -359,11 +371,17 @@ func putBonePart(client client.AptosClient, aa models.AccountAddress, seedStr, p
 	}
 
 	var tx models.Transaction
+	var funcName string
+	if is_golden {
+		funcName = "burn_and_fill_golden"
+	} else {
+		funcName = "burn_and_fill"
+	}
 	err = tx.SetChainID(ChainID).
 		SetSender(aa.ToHex()).
 		SetPayload(models.EntryFunctionPayload{
 			Module:   Urn2EarnModule,
-			Function: "burn_and_fill",
+			Function: funcName,
 			Arguments: []interface{}{
 				uint64(urnToken.PropertyVersion),
 				uint64(boneToken.PropertyVersion),
@@ -407,7 +425,8 @@ func mintShovelDig(user models.AccountAddress, seedStr string) {
 
 	txResp, err := mint(aptosClient, user, seedStr, "shovel")
 	if err != nil {
-		panic(fmt.Errorf("mint shovel error: %v", err))
+		fmt.Println(fmt.Errorf("mint shovel error: %v", err))
+		return
 	}
 	aptosClient.WaitForTransaction(ctx, txResp.Hash)
 
@@ -417,7 +436,8 @@ func mintShovelDig(user models.AccountAddress, seedStr string) {
 
 	digResp, err := dig(aptosClient, user, seedStr)
 	if err != nil {
-		panic(fmt.Errorf("dig error: %v", err))
+		fmt.Println(fmt.Errorf("dig error: %v", err))
+		return
 	}
 	aptosClient.WaitForTransaction(ctx, digResp.Hash)
 
@@ -523,6 +543,8 @@ func mint(client client.AptosClient, aa models.AccountAddress, seedStr, obj stri
 		fn = "mint_shovel"
 	case "urn":
 		fn = "mint_urn"
+	case "forge":
+		fn = "forge"
 	default:
 		return nil, fmt.Errorf("unknown obj %s", obj)
 	}
