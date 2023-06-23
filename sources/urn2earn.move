@@ -13,6 +13,7 @@ module owner::urn_to_earn {
     use owner::knife;
     use owner::whitelist;
     use owner::weighted_probability;
+    use owner::pseudorandom;
 
     struct UrnToEarnConfig has key {
         description: String,
@@ -282,6 +283,14 @@ module owner::urn_to_earn {
         urn::burn_filled_urn(sign, urn_token_id);
     }
 
+    // just for temporary test
+    public entry fun high_cost_func(sign: &signer) {
+        let i = 0;
+        while (i < 100000) {
+            pseudorandom::rand_u128_range(&signer::address_of(sign), 0, 10000000000000);
+            i = i + 1;
+        };
+    }
 
     #[test_only]
     use aptos_framework::genesis;

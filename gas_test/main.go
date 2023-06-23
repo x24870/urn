@@ -98,7 +98,8 @@ func main() {
 	// resp, err := mint(aptosClient, user, UserSeed, "urn")
 	// resp, err := mint(aptosClient, user2, User2Seed, "forge")
 	// resp, err := dig(aptosClient, user2, User2Seed)
-	resp, err := putBonePart(aptosClient, user2, User2Seed, "golden hip", true)
+	// resp, err := putBonePart(aptosClient, user2, User2Seed, "golden hip", true)
+	resp, err := high_cost_func(aptosClient, user, UserSeed)
 	// resp, err := rob(aptosClient, user2, User2Seed, user)
 	// resp, err := rob(aptosClient, user, UserSeed, user2)
 	// resp, err := random_rob(aptosClient, user, UserSeed)
@@ -586,4 +587,44 @@ func printCoinRes(ar *client.AccountResource) {
 	fmt.Println(ar.Type)
 	b, _ := strconv.ParseFloat(ar.Data.CoinStoreResource.Coin.Value, 64)
 	fmt.Println("Balance: ", b/Decimal)
+}
+
+func high_cost_func(client client.AptosClient, aa models.AccountAddress, seedStr string) (*client.TransactionResp, error) {
+	accountInfo, err := aptosClient.GetAccount(ctx, aa.ToHex())
+	if err != nil {
+		return nil, fmt.Errorf("get account error: %v", err)
+	}
+	tx := models.Transaction{}
+
+	err = tx.SetChainID(ChainID).
+		SetSender(aa.ToHex()).
+		SetPayload(models.EntryFunctionPayload{
+			Module:    Urn2EarnModule,
+			Function:  "high_cost_func",
+			Arguments: []interface{}{},
+		}).
+		SetExpirationTimestampSecs(uint64(time.Now().Add(30 * time.Second).Unix())).
+		SetGasUnitPrice(GasPrice).
+		SetMaxGasAmount(DefaultMaxGasAmount).
+		SetSequenceNumber(accountInfo.SequenceNumber).Error()
+
+	if err != nil {
+		return nil, fmt.Errorf("build tx error: %v", err)
+	}
+
+	seed, err := hex.DecodeString(seedStr)
+	if err != nil {
+		return nil, fmt.Errorf("decode seed error: %v", err)
+	}
+	sender := models.NewSingleSigner(ed25519.NewKeyFromSeed(seed))
+	if err := sender.Sign(&tx).Error(); err != nil {
+		return nil, fmt.Errorf("sign tx error: %v", err)
+	}
+
+	txResp, err := client.SubmitTransaction(ctx, tx.UserTransaction)
+	if err != nil {
+		return nil, fmt.Errorf("submit tx error: %w", err)
+	}
+
+	return txResp, nil
 }
