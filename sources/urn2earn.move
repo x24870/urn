@@ -216,7 +216,7 @@ module owner::urn_to_earn {
         token::initialize_token_store(sign);
         token::opt_in_direct_transfer(sign, true);
         token::transfer(
-            &resource, token_id, signer::address_of(sign), 1
+            &resource, token_id, signer::address_of(sign), 1 // TODO: send multiple shards
             );
 
         token_id
@@ -302,8 +302,6 @@ module owner::urn_to_earn {
     use aptos_token::property_map;
     #[test_only]
     use owner::iterable_table::{Self};
-    #[test_only]
-    use owner::pseudorandom;
     #[test_only]
     const INIT_APT: u64 = 1000000000; // 10 APT
 

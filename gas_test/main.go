@@ -23,8 +23,10 @@ const DefaultMaxGasAmount = uint64(5000)
 const OwnerAddr = "56260c419e8b176e0ca7f6d439b69180c2de2cb284d8dee24476f247af204492"
 const UserAddr = "b34c0314d90b2597f2531119601f4ad7fe9db4eb7671265e93c905a46aa92860"
 const UserSeed = "fa5356d432ca2a11838cb6d644e392cf78c3eb7ed8a6148c6165944972cacfde"
-const User2Addr = "d27433714a8f3b701d951f8eeb6be1f7743354ef0aec278028f77d9a8f72da59"
-const User2Seed = "82519badd7ec193a946d4ab3cb3b5d022c25c2a084d8d80606ae6ee826f3bac4"
+const User2Addr = "0e138de41892cba07ad1be13880902c7b7a143b7e7fa044b52bb4c52b150d915"
+const User2Seed = "eba9b94746377de1b644a2c11765dcfd7521f4218461aba724969463a8372f9a"
+const HoardingAddr = "d27433714a8f3b701d951f8eeb6be1f7743354ef0aec278028f77d9a8f72da59"
+const HoardingSeed = "82519badd7ec193a946d4ab3cb3b5d022c25c2a084d8d80606ae6ee826f3bac4"
 
 var aptosClient client.AptosClient
 var tokenClient client.TokenClient
@@ -35,6 +37,7 @@ var aptosCoinTypeTag models.TypeTag
 var owner models.AccountAddress
 var user models.AccountAddress
 var user2 models.AccountAddress
+var hoarding models.AccountAddress
 
 var Urn2EarnModule models.Module
 var KnifeModule models.Module
@@ -84,14 +87,19 @@ func init() {
 	if err != nil {
 		panic(fmt.Errorf("models.HexToAccountAddress error: %v", err))
 	}
+
+	hoarding, err = models.HexToAccountAddress(HoardingAddr)
+	if err != nil {
+		panic(fmt.Errorf("models.HexToAccountAddress error: %v", err))
+	}
 }
 
 func main() {
-	printAccountTokens(user)
+	// printAccountTokens(user)
 
 	// do 10 times
 	// for i := 0; i < 100; i++ {
-	// 	mintShovelDig(user2, User2Seed)
+	// 	mintShovelDig(user2, HoardingSeed)
 	// }
 
 	// resp, err := mint(aptosClient, user2, User2Seed, "shovel")
@@ -99,9 +107,8 @@ func main() {
 	// resp, err := mint(aptosClient, user2, User2Seed, "forge")
 	// resp, err := dig(aptosClient, user2, User2Seed)
 	// resp, err := putBonePart(aptosClient, user2, User2Seed, "golden hip", true)
-	resp, err := high_cost_func(aptosClient, user, UserSeed)
-	// resp, err := rob(aptosClient, user2, User2Seed, user)
-	// resp, err := rob(aptosClient, user, UserSeed, user2)
+	// resp, err := high_cost_func(aptosClient, user, UserSeed)
+	resp, err := rob(aptosClient, user2, User2Seed, user)
 	// resp, err := random_rob(aptosClient, user, UserSeed)
 	if err != nil {
 		panic(fmt.Errorf("error: %v", err))
@@ -109,7 +116,7 @@ func main() {
 	aptosClient.WaitForTransaction(ctx, resp.Hash)
 
 	fmt.Println("-------- transaction hash:", resp.Hash)
-	printAccountTokens(user)
+	// printAccountTokens(user)
 }
 
 // pretty print account tokens
@@ -232,6 +239,7 @@ func rob(
 				uint64(robberUrn.PropertyVersion),
 				victim,
 				uint64(victimUrn.PropertyVersion),
+				"hello world",
 			},
 		}).
 		SetExpirationTimestampSecs(uint64(time.Now().Add(30 * time.Second).Unix())).
@@ -295,6 +303,7 @@ func random_rob(
 			Function: "random_rob",
 			Arguments: []interface{}{
 				uint64(robberUrn.PropertyVersion),
+				"Hello random guy",
 			},
 		}).
 		SetExpirationTimestampSecs(uint64(time.Now().Add(30 * time.Second).Unix())).
