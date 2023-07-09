@@ -18,7 +18,7 @@ const Decimal = 100000000
 const CollectionName = "Aptos"
 const TokenName = "Aptos Token"
 const GasPrice = uint64(100)
-const DefaultMaxGasAmount = uint64(5000)
+const DefaultMaxGasAmount = uint64(500000)
 
 const OwnerAddr = "56260c419e8b176e0ca7f6d439b69180c2de2cb284d8dee24476f247af204492"
 const UserAddr = "b34c0314d90b2597f2531119601f4ad7fe9db4eb7671265e93c905a46aa92860"

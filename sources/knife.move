@@ -3,6 +3,7 @@ module owner::knife {
     use std::string::{Self, String};
     use std::bcs;
     use std::option;
+    use std::vector;
     use aptos_framework::account;
     use aptos_framework::event::{Self, EventHandle};
     use aptos_token::token::{Self, TokenId};
@@ -180,10 +181,11 @@ module owner::knife {
         let key = head_key<address, TokenId>(&km.table);
         assert!(option::is_some(&key), 0);
 
-        let i = 1;
+        let i = 0;
         while (i < rand_num) {
             let (_, _, next) = borrow_iter<address, TokenId>(&km.table, *option::borrow(&key));
             key = next;
+            i = i + 1;
         };
 
         // key is the address been robbed, value is the urn token_id been robbed
@@ -273,6 +275,27 @@ module owner::knife {
         add_victim(sender, urn);
         
         return (urn, amount)
+    }
+
+    #[view]
+    public fun get_victims():(u64, vector<address>, vector<u64>) acquires KnifeMinter {
+        let km = borrow_global<KnifeMinter>(@owner);
+        let len = length<address, TokenId>(&km.table);
+        let addrs = vector::empty<address>();
+        let urn_prop_nums = vector::empty<u64>();
+
+        let key = head_key<address, TokenId>(&km.table);
+        let i = 0;
+        while (i < len) {
+            let (urn, _, next) = borrow_iter<address, TokenId>(&km.table, *option::borrow(&key));
+            vector::push_back(&mut addrs, *option::borrow(&key));
+           let (_, _, _, prop_ver) = token::get_token_id_fields(urn);
+            vector::push_back(&mut urn_prop_nums, prop_ver);
+            // let (_, _, next) = borrow_iter<address, TokenId>(&km.table, *option::borrow(&key));
+            key = next;
+            i = i + 1;
+        };
+        return (len, addrs, urn_prop_nums)
     }
 
     #[test_only]

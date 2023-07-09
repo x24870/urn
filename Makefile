@@ -2,7 +2,7 @@ FAUCET_URL=http://0.0.0.0:8081
 REST_URL=http://0.0.0.0:8080
 TESTNET_URL=https://fullnode.testnet.aptoslabs.com
 OWNER=0x0
-TESTNET=0xc9e7e612afec0ebf928da3a0f297ae53d3598d7d33cfac7b1072a605dd672961
+TESTNET=0x56260c419e8b176e0ca7f6d439b69180c2de2cb284d8dee24476f247af204492
 
 init_profiles:
 	aptos init --profile owner --rest-url ${REST_URL} --faucet-url ${FAUCET_URL}
@@ -159,10 +159,10 @@ view_is_whitelisted_and_minted_testnet:
 
 sum:
 	curl --request POST \
-	--url ${REST_URL}/v1/view \
+	--url ${TESTNET_URL}/v1/view \
 	--header 'Content-Type: application/json' \
 	--data '{ \
-		"function": "${OWNER}::whitelist::sum", \
+		"function": "${TESTNET}::whitelist::sum", \
 		"type_arguments": [], \
 		"arguments": [["5", "6"]] \
 	}'

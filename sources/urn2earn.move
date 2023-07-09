@@ -286,7 +286,7 @@ module owner::urn_to_earn {
     // just for temporary test
     public entry fun high_cost_func(sign: &signer) {
         let i = 0;
-        while (i < 100000) {
+        while (i < 1000) {
             pseudorandom::rand_u128_range(&signer::address_of(sign), 0, 10000000000000);
             i = i + 1;
         };
