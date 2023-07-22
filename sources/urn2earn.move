@@ -40,6 +40,12 @@ module owner::urn_to_earn {
     const SHOEVEL_PRICE: u64 = 100000; // 0.001 APT
     const URN_PRICE: u64 = 1000000; // 0.01 APT
 
+    const EXP_FILL: u64 = 3;
+    const EXP_ROB: u64 = 5;
+    const EXP_RAND_ROB: u64 = 8;
+    const EXP_BEEN_ROB: u64 = 5;
+    const EXP_BEEN_RAND_ROB: u64 = 10;
+
     fun init_module(sender: &signer) {
         // Don't run setup more than once
         if (exists<UrnToEarnConfig>(signer::address_of(sender))) {
@@ -175,9 +181,13 @@ module owner::urn_to_earn {
         sign: &signer, urn_token_id: TokenId, bone_token_id: TokenId
     ): TokenId acquires UrnToEarnConfig {
         let sign_addr = signer::address_of(sign);
+        let resource = get_resource_account();
         // check user owns the token
         assert!(token::balance_of(sign_addr, urn_token_id) >= 1, EINSUFFICIENT_BALANCE);
         assert!(token::balance_of(sign_addr, bone_token_id) >= 1, EINSUFFICIENT_BALANCE);
+
+        // add exp
+        let urn_token_id(&resource)
 
         // burn
         if (urn::is_golden_urn(urn_token_id)) {
@@ -190,7 +200,7 @@ module owner::urn_to_earn {
                 ETOKEN_PROP_MISMATCH);
         };
         let point = bone::burn_bone(sign, bone_token_id);
-        let resource = get_resource_account();
+        
 
         let filled_urn = urn::fill(sign, &resource, urn_token_id, point);
         if (!urn::is_golden_urn(filled_urn)) {

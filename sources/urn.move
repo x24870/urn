@@ -50,9 +50,9 @@ module owner::urn {
     const URN_TOKEN_NAME: vector<u8> = b"urn";
     const GOLDEN_URN_TOKEN_NAME: vector<u8> = b"golden urn";
     const ASH_PROP_NAME: vector<u8> = b"ash";
+    const EXP_PROP_NAME: vector<u8> = b"exp";
     const URN_URL: vector<u8> = b"https://swtj5ht5rztldcg6ag5wzbvr5jpbwaj2pvb7ojiq4dzk6kop5knq.arweave.net/laaenn2OZrGI3gG7bIax6l4bATp9Q_clEODyrynP6ps";
     const GOLDEN_URN_URL: vector<u8> = b"https://35hkq3ikzvppn4nyqyfrw452mmxx7oxguslawh46g4cd3x4rclna.arweave.net/306obQrNXvbxuIYLG3O6Yy9_uuaklgsfnjcEPd-REto";
-
 
     public(friend) fun init_urn(
         sender: &signer, resource: &signer, collection_name: String
@@ -63,16 +63,20 @@ module owner::urn {
         };
 
         // create urn token data
+        let description = string::utf8(b"just an urn"); // TODO: add funny description
         let urn_token_data_id = create_urn_token_data(
             resource, 
             collection_name,
             string::utf8(URN_TOKEN_NAME),
+            description,
             string::utf8(URN_URL)
             );
+        description = string::utf8(b"shinny golden urn"); // TODO: add funny description
         let golden_urn_token_data_id = create_urn_token_data(
             resource, 
             collection_name,
             string::utf8(GOLDEN_URN_TOKEN_NAME),
+            description,
             string::utf8(GOLDEN_URN_URL)
             );
 
@@ -93,23 +97,23 @@ module owner::urn {
         resource: &signer, 
         collection_name: String,
         tokendata_name: String,
+        description: String,
         token_uri: String,
     ): token::TokenDataId {
         let nft_maximum: u64 = 0; // unlimited
-        let description = string::utf8(b"just an urn");
         let royalty_payee_address: address = @owner;
         let royalty_points_denominator: u64 = 100;
         let royalty_points_numerator: u64 = 5;
         let token_mutate_config = token::create_token_mutability_config(
             &vector<bool>[ true, true, true, true, true ]); // max, uri, royalty, description, property
         let default_keys = vector<String>[
-            string::utf8(b"type"), string::utf8(ASH_PROP_NAME), string::utf8(BURNABLE_BY_OWNER)
+            string::utf8(b"type"), string::utf8(ASH_PROP_NAME), string::utf8(EXP_PROP_NAME), string::utf8(BURNABLE_BY_OWNER)
         ];
         let default_vals = vector<vector<u8>>[
-            bcs::to_bytes<string::String>(&tokendata_name), bcs::to_bytes<u8>(&0), bcs::to_bytes<bool>(&true)
+            bcs::to_bytes<string::String>(&tokendata_name), bcs::to_bytes<u8>(&0), bcs::to_bytes<u64>(&0), bcs::to_bytes<bool>(&true)
         ];
         let default_types = vector<String>[
-            string::utf8(b"0x1::string::String"), string::utf8(b"u8"), string::utf8(b"bool")
+            string::utf8(b"0x1::string::String"), string::utf8(b"u8"), string::utf8(b"u64"), string::utf8(b"bool")
         ];
 
         let token_data_id = token::create_tokendata(
@@ -169,6 +173,14 @@ module owner::urn {
         let properties = token::get_property_map(token_owner, token_id);
         let fullness = property_map::read_u8(&properties, &string::utf8(ASH_PROP_NAME));
         fullness
+    }
+
+    public fun get_exp(token_id: TokenId, token_owner: address): u64 {
+        let balance = token::balance_of(token_owner, token_id);
+        assert!(balance != 0, ENOT_OWN_THIS_TOKEN);
+        let properties = token::get_property_map(token_owner, token_id);
+        let exp = property_map::read_u64(&properties, &string::utf8(EXP_PROP_NAME));
+        exp
     }
 
     public fun get_urn_type(token_id: TokenId): String {
@@ -323,6 +335,31 @@ module owner::urn {
                     add<address, u8>(&mut um.urn_burned, addr, 1);
                 }
         }
+    }
+
+    public(friend) fun add_exp(
+        resource: &signer,
+        addr: address,
+        urn: TokenId, // could be urn or golden urn
+        amount: u64
+    ): TokenId{
+        let exp = get_exp(urn, addr);
+        exp = exp + amount;
+
+        let keys = vector<String>[string::utf8(EXP_PROP_NAME)];
+        let vals = vector<vector<u8>>[bcs::to_bytes<u64>(&exp)];
+        let types = vector<String>[string::utf8(b"u64")];
+
+        let token_id = token::mutate_one_token(
+            resource, 
+            addr,
+            urn,
+            keys,
+            vals,
+            types
+        );
+
+        return token_id
     }
 
     public fun is_full(token_id: TokenId, token_owner: address) {
