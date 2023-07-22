@@ -32,6 +32,7 @@ module owner::urn_to_earn {
     const ETEST_ERROR:                   u64 = 6;
     const EWL_QUOTA_OUT:                 u64 = 7;
     const EAPT_BALANCE_INCONSISTENT:     u64 = 8;
+    const EINSUFFICIENT_EXP:             u64 = 9;
 
     const MAX_U64: u64 = 18446744073709551615;
 
@@ -187,7 +188,7 @@ module owner::urn_to_earn {
         assert!(token::balance_of(sign_addr, bone_token_id) >= 1, EINSUFFICIENT_BALANCE);
 
         // add exp
-        let urn_token_id(&resource)
+        let urn_token_id = urn::add_exp(&resource, sign_addr, urn_token_id, EXP_FILL);
 
         // burn
         if (urn::is_golden_urn(urn_token_id)) {
@@ -429,14 +430,28 @@ module owner::urn_to_earn {
         assert!(token::balance_of(user_addr, bone_token_id) == 0, EINSUFFICIENT_BALANCE);
         let fullness = urn::get_ash_fullness(urn_token_id, user_addr);
         assert!(fullness == point, EINSUFFICIENT_BALANCE);
+        let exp = urn::get_exp(urn_token_id, user_addr);
+        assert!(exp == EXP_FILL, EINSUFFICIENT_EXP);
+
+        // test mint golden urn
+        let golden_urn_token_id = urn::mint_golden_urn(user, &resource);
+        token::transfer(&resource, golden_urn_token_id, user_addr, 1);
 
         // test mint golden bone
         let golden_bone_token_id = bone::mint_golden_bone(user, &resource);
         token::transfer(&resource, golden_bone_token_id, user_addr, 1);
         assert!(token::balance_of(user_addr, golden_bone_token_id) == 1, EINSUFFICIENT_BALANCE);
-        // let point = bone::get_bone_point(golden_bone_token_id, user_addr);
-        // debug::print(&point);
+        let point = bone::get_bone_point(golden_bone_token_id, user_addr);
+        debug::print(&point);
         bone::is_golden_bone(golden_bone_token_id, user_addr);
+
+        // test burn golden bone and fill golden urn
+        urn_token_id = burn_and_fill_internal(user, golden_urn_token_id, golden_bone_token_id);
+        assert!(token::balance_of(user_addr, golden_bone_token_id) == 0, EINSUFFICIENT_BALANCE);
+        let fullness = urn::get_ash_fullness(urn_token_id, user_addr);
+        assert!(fullness == point, EINSUFFICIENT_BALANCE);
+        let exp = urn::get_exp(urn_token_id, user_addr);
+        assert!(exp == EXP_FILL, EINSUFFICIENT_EXP);
     }
 
     #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b, robber=@0x0bb3)]
