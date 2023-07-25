@@ -175,7 +175,7 @@ module owner::urn {
         fullness
     }
 
-    public fun get_exp(token_id: TokenId, token_owner: address): u64 {
+    public fun get_exp(token_owner: address, token_id: TokenId): u64 {
         let balance = token::balance_of(token_owner, token_id);
         assert!(balance != 0, ENOT_OWN_THIS_TOKEN);
         let properties = token::get_property_map(token_owner, token_id);
@@ -343,7 +343,7 @@ module owner::urn {
         urn: TokenId, // could be urn or golden urn
         amount: u64
     ): TokenId{
-        let exp = get_exp(urn, addr);
+        let exp = get_exp(addr, urn);
         exp = exp + amount;
 
         let keys = vector<String>[string::utf8(EXP_PROP_NAME)];

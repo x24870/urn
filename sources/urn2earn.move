@@ -257,8 +257,21 @@ module owner::urn_to_earn {
         let collection = string::utf8(COLLECTION_NAME);
         let urn_token_name = string::utf8(urn::get_urn_token_name());
 
+        // random rob
         let robber_urn = token::create_token_id_raw(creator, collection, urn_token_name, prop_ver);
-        let (_, _) = knife::random_rob(robber, robber_urn, &resource, msg);
+        random_rob_internal(robber, &resource, robber_urn, msg);
+    }
+
+    fun random_rob_internal(
+        robber: &signer, resource: &signer, robber_urn: TokenId, msg: String
+    ):(TokenId, u8, address, TokenId) {
+        let (robber_urn, amount, victim_addr, victim_urn) = knife::random_rob(robber, robber_urn, resource, msg);
+
+        // add exp
+        _ = urn::add_exp(resource, signer::address_of(robber), robber_urn, EXP_RAND_ROB);
+        _ = urn::add_exp(resource, victim_addr, victim_urn, EXP_BEEN_RAND_ROB);
+
+        return (robber_urn, amount, victim_addr, victim_urn)
     }
 
     // TODO: write test
@@ -274,9 +287,23 @@ module owner::urn_to_earn {
         let collection = string::utf8(COLLECTION_NAME);
         let urn_token_name = string::utf8(urn::get_urn_token_name());
 
+        // rob
         let robber_urn = token::create_token_id_raw(creator, collection, urn_token_name, robber_prop_ver);
         let victim_urn = token::create_token_id_raw(creator, collection, urn_token_name, victim_prop_ver);
-        let (_, _) = knife::rob(robber, robber_urn, victim_addr, victim_urn, &resource, msg);
+        // let (_, _) = knife::rob(robber, robber_urn, victim_addr, victim_urn, &resource, msg);
+        rob_internal(robber, &resource, robber_urn, victim_addr, victim_urn, msg);
+    }
+
+    fun rob_internal(
+        robber: &signer, resource: &signer, robber_urn: TokenId, victim_addr: address, victim_urn: TokenId, msg: String
+    ):(TokenId, u8, address, TokenId) {
+        let (robber_urn, amount) = knife::rob(robber, robber_urn, victim_addr, victim_urn, resource, msg);
+
+        // add exp
+        _ = urn::add_exp(resource, signer::address_of(robber), robber_urn, EXP_ROB);
+        _ = urn::add_exp(resource, victim_addr, victim_urn, EXP_BEEN_ROB);
+
+        return (robber_urn, amount, victim_addr, victim_urn)
     }
 
     public entry fun reincarnate(sign: &signer, urn_prop_ver: u64) {
@@ -430,7 +457,7 @@ module owner::urn_to_earn {
         assert!(token::balance_of(user_addr, bone_token_id) == 0, EINSUFFICIENT_BALANCE);
         let fullness = urn::get_ash_fullness(urn_token_id, user_addr);
         assert!(fullness == point, EINSUFFICIENT_BALANCE);
-        let exp = urn::get_exp(urn_token_id, user_addr);
+        let exp = urn::get_exp(user_addr, urn_token_id);
         assert!(exp == EXP_FILL, EINSUFFICIENT_EXP);
 
         // test mint golden urn
@@ -450,7 +477,7 @@ module owner::urn_to_earn {
         assert!(token::balance_of(user_addr, golden_bone_token_id) == 0, EINSUFFICIENT_BALANCE);
         let fullness = urn::get_ash_fullness(urn_token_id, user_addr);
         assert!(fullness == point, EINSUFFICIENT_BALANCE);
-        let exp = urn::get_exp(urn_token_id, user_addr);
+        let exp = urn::get_exp(user_addr, urn_token_id);
         assert!(exp == EXP_FILL, EINSUFFICIENT_EXP);
     }
 
@@ -684,17 +711,20 @@ module owner::urn_to_earn {
         assert!(token::balance_of(user_addr, bone_token_id_1) == 0, EINSUFFICIENT_BALANCE);
         assert!(knife::contains_victim(user_addr), ETEST_ERROR);
 
-        // mint knife for robber
+        // mint 2 knifes for robber
         let knife_token_id = knife::mint(user, &resource);
         token::transfer(&resource, knife_token_id, robber_addr, 1);
 
         let msg = string::utf8(b"test");
-        let (robber_urn, amount) = knife::random_rob(robber, robber_urn, &resource, msg);
+        let (robber_urn, amount, victim_addr, victim_urn) = random_rob_internal(robber, &resource, robber_urn, msg);
         assert!(token::balance_of(robber_addr, knife_token_id) == 0, EINSUFFICIENT_BALANCE);
         assert!(urn::get_ash_fullness(user_urn, user_addr)+amount==50, ETOKEN_PROP_MISMATCH);
         assert!(urn::get_ash_fullness(robber_urn, robber_addr) == amount, ETOKEN_PROP_MISMATCH);
         assert!(!knife::contains_victim(user_addr), ETEST_ERROR);
-        // debug::print(&amount);
+        assert!(urn::get_exp(robber_addr, robber_urn) == EXP_RAND_ROB, EINSUFFICIENT_EXP);
+        assert!(urn::get_exp(victim_addr, victim_urn) == EXP_BEEN_RAND_ROB+EXP_FILL, EINSUFFICIENT_EXP);
+        debug::print(&urn::get_exp(robber_addr, robber_urn));
+        debug::print(&urn::get_exp(victim_addr, victim_urn));
 
         //// test rob by address
         let knife_token_id = knife::mint(user, &resource);
@@ -712,11 +742,13 @@ module owner::urn_to_earn {
 
         user_fullness_before = urn::get_ash_fullness(user_urn, user_addr);
         let msg = string::utf8(b"test");
-        let (robber_urn, amount) = knife::rob(robber, robber_urn, user_addr, user_urn, &resource, msg);
+        let (robber_urn, amount, _, _) = rob_internal(robber, &resource, robber_urn, victim_addr, victim_urn, msg);
         assert!(token::balance_of(robber_addr, knife_token_id) == 0, EINSUFFICIENT_BALANCE);
         debug::print(&amount);
         assert!(urn::get_ash_fullness(user_urn, user_addr)+amount==user_fullness_before, ETOKEN_PROP_MISMATCH);
         assert!(urn::get_ash_fullness(robber_urn, robber_addr)-amount==rob_fullness_before, ETOKEN_PROP_MISMATCH);
+        assert!(urn::get_exp(robber_addr, robber_urn) == EXP_RAND_ROB+EXP_ROB, EINSUFFICIENT_EXP);
+        assert!(urn::get_exp(victim_addr, victim_urn) == EXP_BEEN_RAND_ROB+EXP_FILL*2+EXP_BEEN_ROB, EINSUFFICIENT_EXP);
     }
 
     #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b, robber=@0x0bb3)]
@@ -749,7 +781,7 @@ module owner::urn_to_earn {
         token::transfer(&resource, knife_token_id, robber_addr, 1);
 
         let msg = string::utf8(b"e9aff5bffdb5839f4e8fd7d9e846143806dd24559205228275138eae5a7348e3e9aff5bffdb5839f4e8fd7d9e846143806dd24559205228275138eae5a7348e3e9aff5bffdb5839f4e8fd7d9e846143806dd24559205228275138eae5a7348e3e9aff5bffdb5839f4e8fd7d9e846143806dd24559205228275138eae5a7348e3");
-        let (_, _) = knife::random_rob(robber, robber_urn, &resource, msg);
+        let (_, _, _, _) = knife::random_rob(robber, robber_urn, &resource, msg);
     }
 
     #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b, robber=@0x0bb3)]

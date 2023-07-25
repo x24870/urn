@@ -166,7 +166,7 @@ module owner::knife {
         urn: TokenId,
         resource: &signer,
         msg: String
-    ):(TokenId, u8) acquires KnifeMinter, RobHistory {
+    ):(TokenId, u8, address, TokenId) acquires KnifeMinter, RobHistory {
         // check msg length
         assert!(string::length(&msg) < 256, EMSG_TOO_LONG);
         
@@ -189,16 +189,17 @@ module owner::knife {
         };
 
         // key is the address been robbed, value is the urn token_id been robbed
-        let val = iterable_table::remove<address, TokenId>(&mut km.table, *option::borrow(&key));
+        let victim_addr = *option::borrow(&key);
+        let victim_urn = iterable_table::remove<address, TokenId>(&mut km.table, victim_addr);
 
         // determine if the rob will success
         let successed = rand_u8_range_no_sender(0, 100) > 10; // TODO: determine the success rate
         let amount: u8;
         if (successed) {
             // success
-            amount = urn::rand_drain(resource, *option::borrow(&key), val);
+            amount = urn::rand_drain(resource, victim_addr, victim_urn);
 
-            let fillness = urn::get_ash_fullness(val, *option::borrow(&key));
+            let fillness = urn::get_ash_fullness(victim_urn, victim_addr);
             if (fillness + amount > 100) {
                 amount = 100 - fillness;
             };
@@ -209,14 +210,14 @@ module owner::knife {
         };
 
         // emit been robbed event
-        if (exists<RobHistory>(*option::borrow(&key))) {
-            let brh = borrow_global_mut<RobHistory>(*option::borrow(&key));
+        if (exists<RobHistory>(victim_addr)) {
+            let brh = borrow_global_mut<RobHistory>(victim_addr);
             event::emit_event<BeenRobbedEvent>(
                 &mut brh.been_robbed_events,
                 BeenRobbedEvent { 
                     robber: signer::address_of(sender),
                     success: successed, // TODO: implement rob failed
-                    token_id: val,
+                    token_id: victim_urn,
                     amount: amount,
                     msg: msg,
                 },
@@ -225,7 +226,7 @@ module owner::knife {
 
         add_victim(sender, urn);
 
-        return (urn, amount)
+        return (urn, amount, victim_addr, victim_urn)
     }
 
     public(friend) fun rob(
