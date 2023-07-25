@@ -47,6 +47,8 @@ module owner::urn_to_earn {
     const EXP_BEEN_ROB: u64 = 5;
     const EXP_BEEN_RAND_ROB: u64 = 10;
 
+    const REQUIRED_SHARDS: u64 = 69;
+
     fun init_module(sender: &signer) {
         // Don't run setup more than once
         if (exists<UrnToEarnConfig>(signer::address_of(sender))) {
@@ -220,15 +222,12 @@ module owner::urn_to_earn {
     fun dig_internal(
         sign: &signer
     ): TokenId acquires UrnToEarnConfig {
-        // TODO: check shovel balance > 0
         shovel::destroy_shovel(sign);
         let resource = get_resource_account();
-        let token_id = weighted_probability::mint_by_weight(sign, &resource);
+        let (token_id, amount) = weighted_probability::mint_by_weight(sign, &resource);
         token::initialize_token_store(sign);
         token::opt_in_direct_transfer(sign, true);
-        token::transfer(
-            &resource, token_id, signer::address_of(sign), 1 // TODO: send multiple shards
-            );
+        token::transfer(&resource, token_id, signer::address_of(sign), amount);
 
         token_id
     }
@@ -238,8 +237,7 @@ module owner::urn_to_earn {
     }
 
     fun forge_internal(sign: &signer): TokenId acquires UrnToEarnConfig {
-        // TODO: check shard balance >= 10
-        shard::destroy_ten_shards(sign);
+        shard::destroy_69_shards(sign);
 
         let resource = get_resource_account();
         let token_id = urn::mint_golden_urn(sign, &resource);
@@ -519,6 +517,20 @@ module owner::urn_to_earn {
         burn_and_fill(user, urn_prop_ver, bone_prop_ver, part);
     }
 
+    #[test_only]
+    // mint 69 shards
+    fun mint_enough_shards(sign: &signer, resource: &signer): TokenId {
+        let (token_id, _amount) = shard::mint(sign, resource);
+        while (true) {
+            (token_id, _amount) = shard::mint(sign, resource);
+            token::transfer(resource, token_id, signer::address_of(sign), _amount);
+            if (token::balance_of(signer::address_of(sign), token_id) >= REQUIRED_SHARDS) {
+                break
+            };
+        };
+        return token_id
+    }
+
     #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b, robber=@0x0bb3)]
     public fun test_shard(
         aptos_framework: &signer, owner: &signer, user: &signer, robber: &signer
@@ -527,22 +539,12 @@ module owner::urn_to_earn {
         let user_addr = signer::address_of(user);
         let resource = get_resource_account();
         // test mint shard
-        let token_id = shard::mint(user, &resource); // 1
-        shard::mint(user, &resource); // 2
-        shard::mint(user, &resource); // 3
-        shard::mint(user, &resource); // 4
-        shard::mint(user, &resource); // 5
-        shard::mint(user, &resource); // 6
-        shard::mint(user, &resource); // 7
-        shard::mint(user, &resource); // 8
-        shard::mint(user, &resource); // 9
-        shard::mint(user, &resource); // 10
-        token::transfer(&resource, token_id, user_addr, 10);
-
-        assert!(token::balance_of(user_addr, token_id) == 10, EINSUFFICIENT_BALANCE);
+        let token_id = mint_enough_shards(user, &resource);
+        let balance = token::balance_of(user_addr, token_id);
+        assert!(balance >= REQUIRED_SHARDS, EINSUFFICIENT_BALANCE);
 
         let golden_urn_token_id = forge_internal(user);
-        assert!(token::balance_of(user_addr, token_id) == 0, EINSUFFICIENT_BALANCE);
+        assert!(token::balance_of(user_addr, token_id) == balance - REQUIRED_SHARDS, EINSUFFICIENT_BALANCE);
         assert!(token::balance_of(user_addr, golden_urn_token_id) == 1, EINSUFFICIENT_BALANCE);
     }
 
@@ -578,21 +580,12 @@ module owner::urn_to_earn {
         let resource = get_resource_account();
 
         // forge golden urn
-        let shard_token_id = shard::mint(user, &resource); // 1
-        shard::mint(user, &resource); // 2
-        shard::mint(user, &resource); // 3
-        shard::mint(user, &resource); // 4
-        shard::mint(user, &resource); // 5
-        shard::mint(user, &resource); // 6
-        shard::mint(user, &resource); // 7
-        shard::mint(user, &resource); // 8
-        shard::mint(user, &resource); // 9
-        shard::mint(user, &resource); // 10
-        token::transfer(&resource, shard_token_id, user_addr, 10);
-        assert!(token::balance_of(user_addr, shard_token_id) == 10, EINSUFFICIENT_BALANCE);
+        let shard_token_id = mint_enough_shards(user, &resource);
+        let shard_balance = token::balance_of(user_addr, shard_token_id);
+        assert!(shard_balance >= REQUIRED_SHARDS, EINSUFFICIENT_BALANCE);
 
         let golden_urn_token_id = forge_internal(user);
-        assert!(token::balance_of(user_addr, shard_token_id) == 0, EINSUFFICIENT_BALANCE);
+        assert!(token::balance_of(user_addr, shard_token_id) == shard_balance - REQUIRED_SHARDS, EINSUFFICIENT_BALANCE);
         assert!(token::balance_of(user_addr, golden_urn_token_id) == 1, EINSUFFICIENT_BALANCE);
 
         // mint bone
@@ -795,16 +788,16 @@ module owner::urn_to_earn {
         // test mint by weight
         let i = 0;
         while (i < 100) { // Iterate until first cutoff:
-            let token_id = weighted_probability::mint_by_weight(user, &resource);
-            token::transfer(&resource, token_id, user_addr, 1);
+            let (token_id, amount) = weighted_probability::mint_by_weight(user, &resource);
+            token::transfer(&resource, token_id, user_addr, amount);
             i = i + 1;
         };
 
         let knife_token_id = knife::mint(user, &resource);
-        let shard_token_id = shard::mint(user, &resource);
+        let (shard_token_id, _) = shard::mint(user, &resource);
 
         assert!(token::balance_of(user_addr, knife_token_id) > 15, EINSUFFICIENT_BALANCE);
-        assert!(token::balance_of(user_addr, shard_token_id) > 10, EINSUFFICIENT_BALANCE);
+        assert!(token::balance_of(user_addr, shard_token_id) > 50, EINSUFFICIENT_BALANCE);
     }
 
     #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b, robber=@0x0bb3)]

@@ -3,9 +3,12 @@ module owner::shard {
     use std::string::{Self, String};
     use std::bcs;
     use aptos_token::token::{Self};
+    use owner::pseudorandom::rand_u64_range;
 
     const MAX_U64: u64 = 18446744073709551615;
     const BURNABLE_BY_OWNER: vector<u8> = b"TOKEN_BURNABLE_BY_OWNER";
+
+    const REQUIRED_SHARDS: u64 = 69;
 
     friend owner::urn_to_earn;
     friend owner::weighted_probability;
@@ -77,7 +80,7 @@ module owner::shard {
     }
 
 
-    public fun destroy_ten_shards(sign: &signer) acquires ShardMinter {
+    public fun destroy_69_shards(sign: &signer) acquires ShardMinter {
         let shard_minter = borrow_global<ShardMinter>(@owner);
         
         // check user has enough shards
@@ -87,24 +90,26 @@ module owner::shard {
             shard_minter.name,
             0, // property version
         );
-        assert!(token::balance_of(signer::address_of(sign), shard_token_id) >= 1, EINSUFFICIENT_BALANCE);
+        assert!(token::balance_of(signer::address_of(sign), shard_token_id) >= REQUIRED_SHARDS, EINSUFFICIENT_BALANCE);
 
-        // burn 10 shards
+        // burn 69 shards
         token::burn(
             sign,
             shard_minter.res_acct_addr,
             shard_minter.collection,
             shard_minter.name,
             0, // property version
-            10, // amount
+            REQUIRED_SHARDS, // amount
         );
     }
 
-    public(friend) fun mint(_sign: &signer, resource: &signer): token::TokenId acquires ShardMinter {
+    public(friend) fun mint(
+        sign: &signer, resource: &signer
+    ): (token::TokenId, u64) acquires ShardMinter {
         let shardMinter = borrow_global_mut<ShardMinter>(@owner);
 
-        let amount = 1;
+        let amount = rand_u64_range(&signer::address_of(sign), 2, 12); // TODO: determine probability
         let token_id = token::mint_token(resource, shardMinter.token_data_id, amount);
-        token_id
+        (token_id, amount)
     }
 }
