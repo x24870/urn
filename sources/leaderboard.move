@@ -24,8 +24,8 @@ module owner::leaderboard {
     }
 
     // the leaderboard is order by exp in ascending order
-    public fun update_leader_board(
-        sign: &signer, urn_owner: address, urn: TokenId
+    public fun update_leaderboard(
+        urn_owner: address, urn: TokenId
     ) acquires Leaderboard {
         let leaderboard = borrow_global_mut<Leaderboard>(@owner);
         let ranks = &mut leaderboard.ranks;
@@ -38,23 +38,7 @@ module owner::leaderboard {
         };
 
         // insert the urn into the leaderboard
-
-        // let i = 0;
-        // let len = vector::length(ranks);
-        // let urn::get_exp(urn_owner, urn);
-        // while (i < len) {
-        //     let rank = vector::borrow(ranks, i);
-        //     if rank.exp > exp {
-        //         // let new_rank = Rank{addr: signer::address_of(sign), exp: urn};
-        //         // vector::insert(ranks, i, new_rank);
-        //         // vector::pop_back(ranks);
-        //         break;
-        //     }
-        //     i = i + 1;
-        // }
-
-        // let rank = Rank{addr: signer::address_of(sign), exp: exp};
-        // leaderboard.ranks.push_back(rank);        
+        insert_leaderboard(ranks, urn_owner, urn);
     }
 
     fun in_leaderboard(ranks: &vector<Rank>, urn: TokenId): (bool, u64) {
@@ -89,5 +73,10 @@ module owner::leaderboard {
 
         let rank = Rank{addr: urn_owner, urn: urn, exp: exp};
         vector::insert(ranks, i, rank);
+
+        // if length > 10, pop first(the lowest)
+        if (len > LEADERBOARD_SIZE) {
+            vector::remove(ranks, 0);
+        };
     }
 }

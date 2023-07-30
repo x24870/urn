@@ -8,6 +8,7 @@ module owner::urn {
     use aptos_framework::event::{Self, EventHandle};
     use aptos_token::property_map::{Self};
     use owner::pseudorandom::{rand_u8_range_no_sender};
+    use owner::leaderboard;
 
     const MAX_U64: u64 = 18446744073709551615;
     const BURNABLE_BY_OWNER: vector<u8> = b"TOKEN_BURNABLE_BY_OWNER";
@@ -358,6 +359,9 @@ module owner::urn {
             vals,
             types
         );
+
+        // update leaderboard
+        leaderboard::update_leaderboard(addr, urn);
 
         return token_id
     }
