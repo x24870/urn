@@ -14,6 +14,7 @@ module owner::urn_to_earn {
     use owner::whitelist;
     use owner::weighted_probability;
     use owner::pseudorandom;
+    use owner::leaderboard;
 
     struct UrnToEarnConfig has key {
         description: String,
@@ -75,6 +76,7 @@ module owner::urn_to_earn {
         // setup helper modules
         whitelist::init_whitelist_config(sender);
         weighted_probability::init_weighted_probability(sender);
+        leaderboard::init_leaderboard(sender);
 
         move_to(sender, UrnToEarnConfig {
             description: description,

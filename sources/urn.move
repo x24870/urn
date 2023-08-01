@@ -361,7 +361,7 @@ module owner::urn {
         );
 
         // update leaderboard
-        leaderboard::update_leaderboard(addr, urn);
+        leaderboard::update_leaderboard(addr, urn, exp);
 
         return token_id
     }
