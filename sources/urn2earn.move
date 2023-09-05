@@ -94,8 +94,8 @@ module owner::urn_to_earn {
         resource
     }
 
-    public entry fun mint_shovel(sign: &signer) acquires UrnToEarnConfig {
-        mint_shovel_internal(sign, SHOEVEL_PRICE);
+    public entry fun mint_shovel(sign: &signer, amount: u64) acquires UrnToEarnConfig {
+        mint_shovel_internal(sign, amount, SHOEVEL_PRICE);
     }
 
     public entry fun wl_mint_shovel(sign: &signer, collection_name: String) acquires UrnToEarnConfig {
@@ -109,7 +109,7 @@ module owner::urn_to_earn {
         } else {
             assert!(false, EWL_QUOTA_OUT);
         };
-        mint_shovel_internal(sign, shovel_price);
+        mint_shovel_internal(sign, 1, shovel_price);
     }
 
     public entry fun bayc_wl_mint_shovel(sign: &signer) acquires UrnToEarnConfig {
@@ -123,17 +123,17 @@ module owner::urn_to_earn {
         } else {
             assert!(false, EWL_QUOTA_OUT);
         };
-        mint_shovel_internal(sign, shovel_price);
+        mint_shovel_internal(sign, 1, shovel_price);
     }
 
-    fun mint_shovel_internal(sign: &signer, price: u64): TokenId acquires UrnToEarnConfig {
+    fun mint_shovel_internal(sign: &signer, amount: u64, price: u64): TokenId acquires UrnToEarnConfig {
         transfer<AptosCoin>(sign, @owner, price);
         let resource = get_resource_account();
-        let token_id = shovel::mint(sign, &resource);
+        let token_id = shovel::mint(sign, &resource, amount);
         token::initialize_token_store(sign);
         token::opt_in_direct_transfer(sign, true);
         let sender = signer::address_of(sign);
-        token::transfer(&resource, token_id, sender, 1);
+        token::transfer(&resource, token_id, sender, amount);
         token_id
     }
 
@@ -396,8 +396,9 @@ module owner::urn_to_earn {
         init_for_test(aptos_framework, owner, user, robber);
         let user_addr = signer::address_of(user);
         // test mint shovel
-        let token_id = mint_shovel_internal(user, SHOEVEL_PRICE);
-        assert!(token::balance_of(user_addr, token_id) == 1, EINSUFFICIENT_BALANCE);
+        let amount: u64 = 1;
+        let token_id = mint_shovel_internal(user, amount, SHOEVEL_PRICE);
+        assert!(token::balance_of(user_addr, token_id) == amount, EINSUFFICIENT_BALANCE);
         assert!(coin::balance<AptosCoin>(signer::address_of(owner))==INIT_APT+SHOEVEL_PRICE, 0);
         assert!(coin::balance<AptosCoin>(signer::address_of(user))==INIT_APT-SHOEVEL_PRICE, 0);
 
@@ -825,7 +826,7 @@ module owner::urn_to_earn {
         whitelist::add_to_whitelist(owner, collection, wl_addrs);
 
         // get shovel token id
-        let shovel_token_id = mint_shovel_internal(owner, SHOEVEL_PRICE);
+        let shovel_token_id = mint_shovel_internal(owner, 1, SHOEVEL_PRICE);
         let owner_balance = INIT_APT - SHOEVEL_PRICE;
         let owner_balance = owner_balance + SHOEVEL_PRICE;
         let owner_shovel = 1;
@@ -869,7 +870,7 @@ module owner::urn_to_earn {
         whitelist::add_to_whitelist(owner, collection, wl_addrs);
 
         // get shovel token id
-        let shovel_token_id = mint_shovel_internal(owner, SHOEVEL_PRICE);
+        let shovel_token_id = mint_shovel_internal(owner, 1, SHOEVEL_PRICE);
         let owner_balance = INIT_APT - SHOEVEL_PRICE;
         let owner_balance = owner_balance + SHOEVEL_PRICE;
         let owner_shovel = 1;
@@ -899,17 +900,13 @@ module owner::urn_to_earn {
 
         let total_mint = 1000;
         let shovel_token_id = token::create_token_id_raw(creator, collection, string::utf8(b"shovel"), 0);
-        let i = 0;
 
         // mint shovels
-        while (i < total_mint) {
-            mint_shovel_internal(user, SHOEVEL_PRICE);
-            i = i + 1;
-        };
+        mint_shovel_internal(user, total_mint, SHOEVEL_PRICE);
         assert!(token::balance_of(user_addr, shovel_token_id) == total_mint, EINSUFFICIENT_BALANCE);
 
         // dig many times
-        i = 0;
+        let i = 0;
         let t = iterable_table::new<String, u64>();
         while(i < total_mint) {
             let token_id = dig_internal(user);
