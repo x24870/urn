@@ -1,3 +1,11 @@
 .aptos/
 build/
 config.yaml
+
+# tmp ignored for forge init
+note
+scripts/dig.move2
+scripts/mint_shovel.move
+scripts/mint_urn.move2
+scripts/transferTokenV2.move
+sources/leaderboard.move2
