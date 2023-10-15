@@ -6,11 +6,11 @@ pragma abicoder v2;
 import "./lzApp/NonblockingLzApp.sol";
 
 /// @title A LayerZero example sending a cross chain message from a source chain to a destination chain to increment a counter
-abstract contract OmniCounter is NonblockingLzApp {
+contract OmniCounter is NonblockingLzApp {
     bytes public constant PAYLOAD = "\x01\x02\x03\x04";
     uint public counter;
 
-    constructor(address _lzEndpoint) NonblockingLzApp(_lzEndpoint) {}
+    constructor(address _lzEndpoint) NonblockingLzApp(_lzEndpoint, msg.sender) {}
 
     function _nonblockingLzReceive(
         uint16,
@@ -44,5 +44,9 @@ abstract contract OmniCounter is NonblockingLzApp {
         assembly {
             _oracle := mload(add(bytesOracle, 32))
         }
+    }
+
+    function getCount() external view returns (uint) {
+        return counter;
     }
 }
