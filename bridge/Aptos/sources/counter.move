@@ -68,9 +68,9 @@ module counter::counter {
         lz_receive_internal(chain_id, src_address, payload);
     }
 
-    public entry fun lz_receive_types(_src_chain_id: u64, _src_address: vector<u8>, _payload: vector<u8>) : vector<type_info::TypeInfo> {
-        vector::empty<type_info::TypeInfo>()
-    }
+    // public entry fun lz_receive_types(_src_chain_id: u64, _src_address: vector<u8>, _payload: vector<u8>) : vector<type_info::TypeInfo> {
+    //     vector::empty<type_info::TypeInfo>()
+    // }
 
     fun lz_receive_internal(src_chain_id: u64, src_address: vector<u8>, payload: vector<u8>): vector<u8> acquires Counter, Capabilities {
         let cap = borrow_global<Capabilities>(@counter);

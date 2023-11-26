@@ -1,0 +1,11 @@
+[package]
+name = "zro"
+version = "0.0.1"
+
+[addresses]
+zro = "_"
+
+[dependencies.MoveStdlib]
+git = "https://github.com/aptos-labs/aptos-core.git"
+subdir = "aptos-move/framework/move-stdlib"
+rev = "mainnet"
