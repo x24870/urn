@@ -31,6 +31,9 @@ setTrustedRemoteAddressOpGoerli:
 	cast send --rpc-url=${OP_GOERLI} --private-key=${PRIVATE_KEY} ${OP_GOERLI_CONTRACT} \
 	"setTrustedRemoteAddress(uint16,bytes)" 10121 ${GOERLI_CONTRACT}
 
+opSetTrustedRemoteAddressAptos:
+	cast send --rpc-url=${OP_GOERLI} --private-key=${PRIVATE_KEY} ${OP_GOERLI_CONTRACT} \
+	"setTrustedRemoteAddress(uint16,bytes)" 10108 ${APTOS_CONTRACT}
 
 abiEncodeGoerli:
 	cast abi-encode "func(address,address)" ${OP_GOERLI_CONTRACT} ${GOERLI_CONTRACT}

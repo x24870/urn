@@ -41,6 +41,22 @@ module counter::counter {
         borrow_global<Counter>(addr).i
     }
 
+    #[view]
+    public fun get_count_view(addr: address): u64 acquires Counter {
+        get_count(addr)
+    }
+
+public entry fun set_remote(account: &signer, chain_id: u64, remote_addr: vector<u8>) {
+    let evm_address = vector<u8>[
+        0x3C, 0x12, 0x7B, 0xE7, 0xC3, 0x0E, 0x4F, 0x0C, 
+        0x86, 0x30, 0x47, 0xCA, 0x56, 0x66, 0x84, 0xD6, 
+        0x6A, 0x26, 0x48, 0x93
+    ];
+    let chain_id = 10132;
+    remote::set(account, chain_id, evm_address);
+}
+
+
     //
     // lz func
     //

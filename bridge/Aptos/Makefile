@@ -1,5 +1,6 @@
 include Makefile.config
 export PATH := deps/aptos-core/target/release/:$(PATH)
+TESTNET_URL=https://fullnode.testnet.aptoslabs.com
 
 .PHONY: build install-aptos test compile local-node
 
@@ -72,7 +73,7 @@ compile-oracle:
 	cd apps/oracle && aptos move compile --included-artifacts=${included_artifacts} --save-metadata --named-addresses layerzero_common=${layerzero_common},msglib_auth=${msglib_auth},zro=${zro},msglib_v1_1=${msglib_v1_1},msglib_v2=${msglib_v2},executor_auth=${executor_auth},executor_v2=${executor_v2},layerzero=${layerzero},oracle=0xBEAD
 
 compile-counter:
-	aptos move compile --included-artifacts=${included_artifacts} --skip-fetch-latest-git-deps --save-metadata --named-addresses layerzero_common=${layerzero_common},msglib_auth=${msglib_auth},zro=${zro},msglib_v1_1=${msglib_v1_1},msglib_v2=${msglib_v2},executor_auth=${executor_auth},executor_v2=${executor_v2},layerzero=${layerzero},counter=0xBEAD
+	aptos move compile --included-artifacts=${included_artifacts} --skip-fetch-latest-git-deps --save-metadata --named-addresses layerzero_common=${layerzero_common},msglib_auth=${msglib_auth},zro=${zro},msglib_v1_1=${msglib_v1_1},msglib_v2=${msglib_v2},executor_auth=${executor_auth},executor_v2=${executor_v2},layerzero=${layerzero},counter=testnet
 	# cd apps/counter && aptos move compile --included-artifacts=${included_artifacts} --save-metadata --named-addresses layerzero_common=${layerzero_common},msglib_auth=${msglib_auth},zro=${zro},msglib_v1_1=${msglib_v1_1},msglib_v2=${msglib_v2},executor_auth=${executor_auth},executor_v2=${executor_v2},layerzero=${layerzero},counter=0xBEAD
 
 compile-bridge:
@@ -92,24 +93,30 @@ publish-counter:
 	--named-addresses layerzero_common=${layerzero_common},msglib_auth=${msglib_auth},zro=${zro},msglib_v1_1=${msglib_v1_1},msglib_v2=${msglib_v2},executor_auth=${executor_auth},executor_v2=${executor_v2},layerzero=${layerzero},counter=testnet \
 	--sender-account testnet --profile testnet
 
-publish-common:
-	cd layerzero-common && aptos move publish --included-artifacts=${included_artifacts} --skip-fetch-latest-git-deps --named-addresses layerzero_common=testnet --sender-account testnet --profile testnet
-publish-msglib-auth:
-	cd msglib/msglib-auth && aptos move publish --included-artifacts=${included_artifacts} --skip-fetch-latest-git-deps --named-addresses layerzero_common=testnet,msglib_auth=testnet --sender-account testnet --profile testnet
-publish-zro:
-	cd zro && aptos move publish --included-artifacts=${included_artifacts} --skip-fetch-latest-git-deps --named-addresses layerzero_common=testnet,msglib_auth=testnet,zro=testnet --sender-account testnet --profile testnet
-publish-msglib-v1-1:
-	cd msglib/msglib-v1/msglib-v1-1 && aptos move publish --included-artifacts=${included_artifacts} --skip-fetch-latest-git-deps --named-addresses layerzero_common=testnet,msglib_auth=testnet,zro=testnet,msglib_v1_1=testnet --sender-account testnet --profile testnet
-publish-executor-auth:
-	cd executor/executor-auth && aptos move publish --included-artifacts=${included_artifacts} --skip-fetch-latest-git-deps --named-addresses layerzero_common=testnet,msglib_auth=testnet,zro=testnet,msglib_v1_1=testnet,msglib_v2=testnet,executor_auth=testnet --sender-account testnet --profile testnet
-publish-executor-v2:
-	cd executor/executor-v2 && aptos move publish --included-artifacts=${included_artifacts} --skip-fetch-latest-git-deps --named-addresses layerzero_common=testnet,msglib_auth=testnet,zro=testnet,msglib_v1_1=testnet,msglib_v2=testnet,executor_auth=testnet,executor_v2=testnet --sender-account testnet --profile testnet
-publish-msglib-v2:
-	cd msglib/msglib-v2 && aptos move publish --included-artifacts=${included_artifacts} --skip-fetch-latest-git-deps --named-addresses layerzero_common=testnet,msglib_auth=testnet,zro=testnet,msglib_v1_1=testnet,msglib_v2=testnet,executor_auth=testnet,executor_v2=testnet --sender-account testnet --profile testnet
-publish-layerzero:
-	cd layerzero && aptos move publish --included-artifacts=${included_artifacts} --skip-fetch-latest-git-deps --named-addresses layerzero_common=testnet,msglib_auth=testnet,zro=testnet,msglib_v1_1=testnet,msglib_v2=testnet,executor_auth=testnet,executor_v2=testnet,layerzero=testnet --sender-account testnet --profile testnet
-
 publish-counter-testnet:
 	aptos move publish --included-artifacts=${included_artifacts} --skip-fetch-latest-git-deps \
-	--named-addresses layerzero_common=${testnet_module},msglib_auth=${testnet_module},zro=${testnet_module},msglib_v1_1=${testnet_module},executor_auth=${testnet_module},executor_v2=${testnet_module},msglib_v2=${testnet_module},layerzero=${testnet_module},counter=testnet \
+	--named-addresses layerzero_common=${TESTNET_ENDPOINT},msglib_auth=${TESTNET_ENDPOINT},zro=${TESTNET_ENDPOINT},msglib_v1_1=${TESTNET_ENDPOINT},executor_auth=${TESTNET_ENDPOINT},executor_v2=${TESTNET_ENDPOINT},msglib_v2=${TESTNET_ENDPOINT},layerzero=${TESTNET_ENDPOINT},counter=testnet \
 	--sender-account testnet --profile testnet
+
+set-remote:
+	aptos move run --function-id testnet::counter::set_remote \
+	--sender-account=testnet --profile=testnet \
+	--args u64:10132 "u8:[]"
+
+create-counter:
+	aptos move run --function-id testnet::counter::create_counter \
+	--sender-account=testnet --profile=testnet \
+	--args u64:2
+
+get-count:
+	aptos move view --function-id testnet::counter::get_count_view --url=${TESTNET_URL} --args address:0e1926f82510045d7341f2101515c9ffb9cd4fea327cebbc5965c04754b49f37
+
+send_to_remote:
+	aptos move run --function-id testnet::counter::send_to_remote \
+	--sender-account=testnet --profile=testnet \
+	--args u64:10132 u64:2 "u8:[]"
+
+quote_fee:
+	aptos move run-script --assume-yes \
+	--script-path scripts/qoute_fee.move --url=${TESTNET_URL} \
+	--sender-account=testnet --profile=testnet
