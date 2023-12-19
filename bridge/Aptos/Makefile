@@ -101,7 +101,17 @@ publish-counter-testnet:
 set-remote:
 	aptos move run --function-id testnet::counter::set_remote \
 	--sender-account=testnet --profile=testnet \
-	--args u64:10132 "u8:[]"
+	--args u64:10121 "u8:[]"
+
+# set-config:
+# 	aptos move run --function-id testnet::counter::set_cfg \
+# 	--sender-account=testnet --profile=testnet \
+# 	--args u64:10132 u64:2
+
+# set-send-msglib:
+# 	aptos move run --function-id testnet::counter::set_send_msglib \
+# 	--sender-account=testnet --profile=testnet \
+# 	--args u64:10132
 
 create-counter:
 	aptos move run --function-id testnet::counter::create_counter \
@@ -114,9 +124,12 @@ get-count:
 send_to_remote:
 	aptos move run --function-id testnet::counter::send_to_remote \
 	--sender-account=testnet --profile=testnet \
-	--args u64:10132 u64:2 "u8:[]"
+	--args u64:10121 u64:555 "u8:[]"
 
 quote_fee:
 	aptos move run-script --assume-yes \
 	--script-path scripts/qoute_fee.move --url=${TESTNET_URL} \
 	--sender-account=testnet --profile=testnet
+
+get_default_send_msglib:
+	aptos move view --function-id testnet::counter::get_default_send_msglib --url=${TESTNET_URL} --args u64:10121

@@ -6,11 +6,14 @@ module counter::counter {
     use layerzero::endpoint::{Self, UaCapability};
     use layerzero::lzapp;
     use layerzero::remote;
+    use layerzero_common::serde;
     use aptos_std::type_info;
+    
 
     const ECOUNTER_ALREADY_CREATED: u64 = 0x00;
     const ECOUNTER_NOT_CREATED: u64 = 0x01;
     const ECOUNTER_UNTRUSTED_ADDRESS: u64 = 0x02;
+    const ENOT_MOD_OWNER: u64 = 0x03;
 
     const COUNTER_PAYLOAD: vector<u8> = vector<u8>[1, 2, 3, 4];
 
@@ -41,20 +44,36 @@ module counter::counter {
         borrow_global<Counter>(addr).i
     }
 
+    public entry fun set_cfg(sign: &signer, dst_chain_id: u64, confirmations: u64) {
+        assert!(signer::address_of(sign) == @counter, ENOT_MOD_OWNER);
+        let confirmations_bytes = vector::empty();
+        serde::serialize_u64(&mut confirmations_bytes, confirmations);
+        lzapp::set_config<CounterUA>(sign, 1, 0, dst_chain_id, 3, confirmations_bytes);
+    }
+
+    public entry fun set_send_msglib(sign: &signer, dst_chain_id: u64) {
+        assert!(signer::address_of(sign) == @counter, ENOT_MOD_OWNER);
+        lzapp::set_send_msglib<CounterUA>(sign, dst_chain_id, 1, 0);
+    }
+
     #[view]
     public fun get_count_view(addr: address): u64 acquires Counter {
         get_count(addr)
     }
 
-public entry fun set_remote(account: &signer, chain_id: u64, remote_addr: vector<u8>) {
-    let evm_address = vector<u8>[
-        0x3C, 0x12, 0x7B, 0xE7, 0xC3, 0x0E, 0x4F, 0x0C, 
-        0x86, 0x30, 0x47, 0xCA, 0x56, 0x66, 0x84, 0xD6, 
-        0x6A, 0x26, 0x48, 0x93
-    ];
-    let chain_id = 10132;
-    remote::set(account, chain_id, evm_address);
-}
+    #[view]
+    public fun get_default_send_msglib(dst_chain_id: u64): (u64, u8) {
+        endpoint::get_default_send_msglib(dst_chain_id)
+    }
+
+    public entry fun set_remote(account: &signer, chain_id: u64, remote_addr: vector<u8>) {
+        let evm_address = vector<u8>[
+            0x3C, 0x12, 0x7B, 0xE7, 0xC3, 0x0E, 0x4F, 0x0C, 
+            0x86, 0x30, 0x47, 0xCA, 0x56, 0x66, 0x84, 0xD6, 
+            0x6A, 0x26, 0x48, 0x93
+        ];
+        remote::set(account, chain_id, evm_address);
+    }
 
 
     //
@@ -72,7 +91,6 @@ public entry fun set_remote(account: &signer, chain_id: u64, remote_addr: vector
         let cap = borrow_global<Capabilities>(signer_addr);
         let dst_address = remote::get(@counter, chain_id);
         let (_, refund) = lzapp::send<CounterUA>(chain_id, dst_address, COUNTER_PAYLOAD, fee_in_coin, adapter_params, vector::empty<u8>(), &cap.cap);
-
         coin::deposit(signer_addr, refund);
     }
 
