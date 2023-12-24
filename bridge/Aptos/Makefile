@@ -122,7 +122,7 @@ get-count:
 	aptos move view --function-id testnet::counter::get_count_view --url=${TESTNET_URL} --args address:0e1926f82510045d7341f2101515c9ffb9cd4fea327cebbc5965c04754b49f37
 
 send_to_remote:
-	aptos move run --function-id testnet::counter::send_to_remote \
+	aptos move run --assume-yes --function-id testnet::counter::send_to_remote \
 	--sender-account=testnet --profile=testnet \
 	--args u64:10121 u64:555 "u8:[]"
 
