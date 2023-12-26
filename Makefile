@@ -1,3 +1,4 @@
+include Makefile.config
 FAUCET_URL=http://0.0.0.0:8081
 REST_URL=http://0.0.0.0:8080
 TESTNET_URL=https://fullnode.testnet.aptoslabs.com
@@ -27,7 +28,12 @@ fund:
 	--profile user --account user --amount 999999999
 
 compile:
-	aptos move compile --bytecode-version 6 --named-addresses owner=${profile}
+	aptos move compile --bytecode-version 6 \
+	--included-artifacts=${included_artifacts} --skip-fetch-latest-git-deps --save-metadata \
+	--named-addresses owner=${profile},layerzero_common=${layerzero_common},msglib_auth=${msglib_auth},zro=${zro},msglib_v1_1=${msglib_v1_1},msglib_v2=${msglib_v2},executor_auth=${executor_auth},executor_v2=${executor_v2},layerzero=${layerzero}
+
+compile-common:
+	cd aptos_bridge/layerzero-common && aptos move compile --included-artifacts=${included_artifacts} --save-metadata --named-addresses layerzero_common=${layerzero_common}
 
 compile_testnet:
 	aptos move compile --named-addresses owner=testnet

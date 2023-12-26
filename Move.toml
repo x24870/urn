@@ -23,6 +23,16 @@ git = 'https://github.com/aptos-labs/aptos-core.git'
 rev = 'main'
 subdir = 'aptos-move/framework/aptos-stdlib/'
 
+[dependencies]
+layerzero = { local = "./aptos_bridge/layerzero" }
+layerzero_common = { local = "./aptos_bridge/layerzero-common" }
+executor_auth = { local = "./aptos_bridge/executor/executor-auth" }
+msglib_auth = { local = "./aptos_bridge/msglib/msglib-auth" }
+msglib_v1_1 = { local = "./aptos_bridge/msglib/msglib-v1/msglib-v1-1" }
+zro = { local = "./aptos_bridge/zro" }
+msglib_v2 = { local = "./aptos_bridge/msglib/msglib-v2" }
+executor_v2 = { local = "./aptos_bridge/executor/executor-v2" }
+
 [addresses]
 std = "0x1"
 aptos_std = "0x1"
