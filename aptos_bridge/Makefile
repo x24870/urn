@@ -44,33 +44,47 @@ test: test-common test-layerzero test-oracle test-counter test-bridge test-layer
 
 compile-common:
 	cd layerzero-common && aptos move compile --included-artifacts=${included_artifacts} --save-metadata --named-addresses layerzero_common=${layerzero_common}
+publish-common:
+	cd layerzero-common && aptos move publish --included-artifacts=${included_artifacts} --named-addresses layerzero_common=owner --profile owner
+
 
 compile-zro:
 	cd zro && aptos move compile --included-artifacts=${included_artifacts} --save-metadata --named-addresses zro=${zro}
+publish-zro:
+	cd zro && aptos move publish --included-artifacts=${included_artifacts} --named-addresses zro=owner --profile owner
 
 compile-msglib-auth:
 	cd ./msglib/msglib-auth && aptos move compile --included-artifacts=${included_artifacts} --save-metadata --named-addresses layerzero_common=${layerzero_common},msglib_auth=${msglib_auth}
+publish-msglib-auth:
+	cd ./msglib/msglib-auth && aptos move publish --included-artifacts=${included_artifacts} --named-addresses msglib_auth=owner,layerzero_common=owner --profile owner
 
 compile-msglib-v2:
 	cd ./msglib/msglib-v2 && aptos move compile --included-artifacts=${included_artifacts} --save-metadata --named-addresses layerzero_common=${layerzero_common},msglib_auth=${msglib_auth},zro=${zro},msglib_v2=${msglib_v2}
+publish-msglib-v2:
+	cd ./msglib/msglib-v2 && aptos move publish --included-artifacts=${included_artifacts} --named-addresses msglib_v2=owner,layerzero_common=owner,msglib_auth=owner,zro=owner --profile owner
 
 compile-msglib-v1-1:
 	cd ./msglib/msglib-v1/msglib-v1-1 && aptos move compile --included-artifacts=${included_artifacts} --save-metadata --named-addresses layerzero_common=${layerzero_common},msglib_auth=${msglib_auth},zro=${zro},msglib_v1_1=${msglib_v1_1}
+publish-msglib-v1-1:
+	cd ./msglib/msglib-v1/msglib-v1-1 && aptos move publish --included-artifacts=${included_artifacts} --named-addresses msglib_v1_1=owner,layerzero_common=owner,msglib_auth=owner,zro=owner --profile owner
 
 compile-layerzero:
 	cd layerzero && aptos move compile --included-artifacts=${included_artifacts} --save-metadata --named-addresses layerzero_common=${layerzero_common},msglib_auth=${msglib_auth},zro=${zro},msglib_v1_1=${msglib_v1_1},msglib_v2=${msglib_v2},layerzero=${layerzero},executor_auth=${executor_auth},executor_v2=${executor_v2}
+publish-layerzero:
+	cd layerzero && aptos move publish --included-artifacts=${included_artifacts} --named-addresses executor_v2=owner,executor_auth=owner,layerzero=owner,layerzero_common=owner,msglib_auth=owner,zro=owner,msglib_v1_1=owner,msglib_v2=owner,executor_auth=owner,executor_v2=owner --profile owner
 
 compile-executor-auth:
 	cd ./executor/executor-auth && aptos move compile --included-artifacts=${included_artifacts} --save-metadata --named-addresses layerzero_common=${layerzero_common},executor_auth=${executor_auth}
+publish-executor-auth:
+	cd ./executor/executor-auth && aptos move publish --included-artifacts=${included_artifacts} --named-addresses executor_auth=owner,layerzero_common=owner --profile owner
 
 compile-executor-v2:
 	cd ./executor/executor-v2 && aptos move compile --included-artifacts=${included_artifacts} --save-metadata --named-addresses layerzero_common=${layerzero_common},executor_auth=${executor_auth},executor_v2=${executor_v2}
+publish-executor-v2:
+	cd ./executor/executor-v2 && aptos move publish --included-artifacts=${included_artifacts} --named-addresses executor_v2=owner,layerzero_common=owner,executor_auth=owner --profile owner
 
 compile-executor-ext:
 	cd ./executor/executor-ext && aptos move compile --included-artifacts=${included_artifacts} --save-metadata --named-addresses executor_ext=${executor_ext}
-
-compile-oracle:
-	cd apps/oracle && aptos move compile --included-artifacts=${included_artifacts} --save-metadata --named-addresses layerzero_common=${layerzero_common},msglib_auth=${msglib_auth},zro=${zro},msglib_v1_1=${msglib_v1_1},msglib_v2=${msglib_v2},executor_auth=${executor_auth},executor_v2=${executor_v2},layerzero=${layerzero},oracle=0xBEAD
 
 compile-counter:
 	aptos move compile --included-artifacts=${included_artifacts} --skip-fetch-latest-git-deps --save-metadata --named-addresses layerzero_common=${layerzero_common},msglib_auth=${msglib_auth},zro=${zro},msglib_v1_1=${msglib_v1_1},msglib_v2=${msglib_v2},executor_auth=${executor_auth},executor_v2=${executor_v2},layerzero=${layerzero},counter=testnet
