@@ -39,13 +39,24 @@ compile_testnet:
 	aptos move compile --named-addresses owner=testnet
 
 publish:
+	mv sources/bridge.move sources/bridge.move2
 	aptos move publish --named-addresses owner=${profile} \
 	--bytecode-version=6 --included-artifacts=none \
 	--sender-account ${profile} --profile ${profile}
+	mv sources/bridge.move2 sources/bridge.move
 
 publish_testnet:
-	aptos move publish --named-addresses owner=testnet \
-	--sender-account testnet --profile testnet
+	aptos move publish --assume-yes --sender-account testnet --profile testnet \
+	--named-addresses owner=testnet,layerzero_common=${TESTNET_ENDPOINT},msglib_auth=${TESTNET_ENDPOINT},zro=${TESTNET_ENDPOINT},msglib_v1_1=${TESTNET_ENDPOINT},executor_auth=${TESTNET_ENDPOINT},executor_v2=${TESTNET_ENDPOINT},msglib_v2=${TESTNET_ENDPOINT},layerzero=${TESTNET_ENDPOINT}
+	
+set_remote:
+	aptos move run --assume-yes --function-id ${profile}::counter::set_remote \
+	--sender-account=${profile} --profile=${profile} \
+	--args u64:10121 "u8:[]"
+send_to_remote:
+	aptos move run --assume-yes --function-id ${profile}::counter::send_to_remote \
+	--sender-account=${profile} --profile=${profile} \
+	--args u64:10121 u64:555 "u8:[]"
 
 mint_shovel:
 	aptos move run --function-id ${TESTNET}::urn_to_earn::mint_shovel \

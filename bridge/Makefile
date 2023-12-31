@@ -3,6 +3,8 @@ export $(shell sed 's/=.*//' .env)
 
 deploy_goerli:
 	forge create src/OmniCounter.sol:OmniCounter --rpc-url=${GOERLI} --private-key=${PRIVATE_KEY} --constructor-args=0xbfD2135BFfbb0B5378b56643c2Df8a87552Bfa23
+deploy_reborn_goerli:
+	forge create src/TheReborn.sol:Reborn --rpc-url=${GOERLI} --private-key=${PRIVATE_KEY} --constructor-args=0xbfD2135BFfbb0B5378b56643c2Df8a87552Bfa23 --constructor-args=0xF5E8A439C599205C1aB06b535DE46681Aed1007a
 
 deploy_op_goerli:
 	forge create src/OmniCounter.sol:OmniCounter --rpc-url=${OP_GOERLI} --private-key=${PRIVATE_KEY} --constructor-args=0xae92d5aD7583AD66E49A0c67BAd18F6ba52dDDc1
@@ -30,6 +32,9 @@ opSetTrustedRemoteAddressAptos:
 setTrustedRemoteAddressAptos:
 	cast send --rpc-url=${GOERLI} --private-key=${PRIVATE_KEY} ${GOERLI_CONTRACT} \
 	"setTrustedRemoteAddress(uint16,bytes)" 10108 ${APTOS_CONTRACT}
+setRebornRemoteAddressAptos:
+	cast send --rpc-url=${GOERLI} --private-key=${PRIVATE_KEY} ${REBORN_GOERLI_CONTRACT} \
+	"setTrustedRemoteAddress(uint16,bytes)" 10108 ${REBORN_APTOS_CONTRACT}
 
 abiEncodeGoerli:
 	cast abi-encode "func(address,address)" ${OP_GOERLI_CONTRACT} ${GOERLI_CONTRACT}
@@ -44,13 +49,13 @@ incrementCounterOpGoerli:
 	cast send --rpc-url=${OP_GOERLI} --private-key=${PRIVATE_KEY} --value 0.01ether ${OP_GOERLI_CONTRACT} "incrementCounter(uint16)" ${LZ_GOERLI_CHAIN_ID}
 	
 hasStoredPayloadGoerli:
-	# cast call --rpc-url=${GOERLI} ${GOERLI_ENPOINT_CONTRACT} "hasStoredPayload(uint16,bytes)" ${LZ_OP_GOERLI_CHAIN_ID} ${OP_GOERLI_CONTRACT}
-	# cast call --rpc-url=${GOERLI} ${GOERLI_ENPOINT_CONTRACT} "hasStoredPayload(uint16,bytes)" ${LZ_OP_GOERLI_CHAIN_ID} ${OP_GOERLI_CONTRACT}
-	cast call --rpc-url=${GOERLI} ${GOERLI_ENPOINT_CONTRACT} "hasStoredPayload(uint16,bytes)" ${LZ_GOERLI_CHAIN_ID} ${GOERLI_CONTRACT}
+	# cast call --rpc-url=${GOERLI} ${GOERLI_ENDPOINT_CONTRACT} "hasStoredPayload(uint16,bytes)" ${LZ_OP_GOERLI_CHAIN_ID} ${OP_GOERLI_CONTRACT}
+	# cast call --rpc-url=${GOERLI} ${GOERLI_ENDPOINT_CONTRACT} "hasStoredPayload(uint16,bytes)" ${LZ_OP_GOERLI_CHAIN_ID} ${OP_GOERLI_CONTRACT}
+	cast call --rpc-url=${GOERLI} ${GOERLI_ENDPOINT_CONTRACT} "hasStoredPayload(uint16,bytes)" ${LZ_GOERLI_CHAIN_ID} ${GOERLI_CONTRACT}
 
 hasStoredPayloadOpGoerli:
-	# cast call --rpc-url=${OP_GOERLI} ${OP_GOERLI_ENPOINT_CONTRACT} "hasStoredPayload(uint16,bytes)" ${LZ_GOERLI_CHAIN_ID} ${GOERLI_CONTRACT}
-	cast call --rpc-url=${OP_GOERLI} ${OP_GOERLI_ENPOINT_CONTRACT} "hasStoredPayload(uint16,bytes)" ${LZ_GOERLI_CHAIN_ID} ${GOERLI_CONTRACT}
+	# cast call --rpc-url=${OP_GOERLI} ${OP_GOERLI_ENDPOINT_CONTRACT} "hasStoredPayload(uint16,bytes)" ${LZ_GOERLI_CHAIN_ID} ${GOERLI_CONTRACT}
+	cast call --rpc-url=${OP_GOERLI} ${OP_GOERLI_ENDPOINT_CONTRACT} "hasStoredPayload(uint16,bytes)" ${LZ_GOERLI_CHAIN_ID} ${GOERLI_CONTRACT}
 
 
 ### txs note

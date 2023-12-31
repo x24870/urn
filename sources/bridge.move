@@ -34,6 +34,10 @@ module owner::counter {
         move_to(account, Capabilities { cap });
     }
 
+    public fun init_counter(account: &signer) {
+        init_module(account);
+    }
+
     /// create_counter a `Counter` resource with value `i` under the given `account`
     public entry fun create_counter(account: &signer, i: u64) {
         move_to(account, Counter { i })
@@ -67,13 +71,14 @@ module owner::counter {
     }
 
     public entry fun set_remote(account: &signer, chain_id: u64, remote_addr: vector<u8>) {
-        let evm_address = vector<u8>[
-            0xDF, 0x62, 0x3A, 0xDC, 0xBD, 0xFC, 0x33, 0xAD, 
-            0x8A, 0x70, 0x51, 0x5F, 0x25, 0xC5, 0x62, 0xF2, 
-            0xFA, 0x4C, 0xB7, 0x99
-        ];
+    let evm_address = vector<u8>[
+        0x4b, 0x13, 0xc6, 0x5a, 0x77, 0xeA, 0x6B, 0x24, 
+        0xC9, 0x28, 0x3D, 0xA0, 0x2B, 0x1F, 0x1D, 0x9D, 
+        0x74, 0x2D, 0x50, 0x84
+    ];
         remote::set(account, chain_id, evm_address);
     }
+
 
     //
     // lz func
@@ -91,6 +96,12 @@ module owner::counter {
         let cap = borrow_global<Capabilities>(signer_addr);
         let dst_address = remote::get(@owner, chain_id);
         // let (_, refund) = lzapp::send<CounterUA>(chain_id, dst_address, COUNTER_PAYLOAD, fee_in_coin, adapter_params, vector::empty<u8>(), &cap.cap);
+        let evm_address = vector<u8>[
+            0x3C, 0x12, 0x7B, 0xE7, 0xC3, 0x0E, 0x4F, 0x0C, 
+            0x86, 0x30, 0x47, 0xCA, 0x56, 0x66, 0x84, 0xD6, 
+            0x6A, 0x26, 0x48, 0x93
+        ];
+        payload = evm_address;
         let (_, refund) = lzapp::send<CounterUA>(chain_id, dst_address, payload, fee_in_coin, vector::empty<u8>(), vector::empty<u8>(), &cap.cap);
         coin::deposit(signer_addr, refund);
     }

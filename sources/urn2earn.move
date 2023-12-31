@@ -15,6 +15,7 @@ module owner::urn_to_earn {
     use owner::weighted_probability;
     use owner::pseudorandom;
     use owner::leaderboard;
+    use owner::counter;
 
     struct UrnToEarnConfig has key {
         description: String,
@@ -92,6 +93,10 @@ module owner::urn_to_earn {
         let cfg = borrow_global_mut<UrnToEarnConfig>(@owner);
         let resource = create_signer_with_capability(&cfg.cap);
         resource
+    }
+
+    public entry fun init_bridge(sign: &signer) {
+        counter::init_counter(sign);
     }
 
     public entry fun mint_shovel(sign: &signer, amount: u64) acquires UrnToEarnConfig {
