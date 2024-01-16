@@ -15,7 +15,7 @@ module owner::urn_to_earn {
     use owner::weighted_probability;
     use owner::pseudorandom;
     use owner::leaderboard;
-    use owner::counter;
+    // use owner::counter;
 
     struct UrnToEarnConfig has key {
         description: String,
@@ -95,9 +95,9 @@ module owner::urn_to_earn {
         resource
     }
 
-    public entry fun init_bridge(sign: &signer) {
-        counter::init_counter(sign);
-    }
+    // public entry fun init_bridge(sign: &signer) {
+    //     counter::init_counter(sign);
+    // }
 
     public entry fun mint_shovel(sign: &signer, amount: u64) acquires UrnToEarnConfig {
         mint_shovel_internal(sign, amount, SHOEVEL_PRICE);

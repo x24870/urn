@@ -193,7 +193,8 @@ module owner::knife {
         let victim_urn = iterable_table::remove<address, TokenId>(&mut km.table, victim_addr);
 
         // determine if the rob will success
-        let successed = rand_u8_range_no_sender(0, 100) > 10; // TODO: determine the success rate
+        // let successed = rand_u8_range_no_sender(0, 100) > 10; // TODO: determine the success rate
+        let successed = true;
         let amount: u8;
         if (successed) {
             // success
@@ -247,7 +248,8 @@ module owner::knife {
         assert!(len != 0, ETABLE_EMPTY);
 
         // determine if the rob will success
-        let successed = rand_u8_range_no_sender(0, 100) > 10; // TODO: determine the success rate
+        // let successed = rand_u8_range_no_sender(0, 100) > 10; // TODO: determine the success rate
+        let successed = true;
         let amount: u8;
         if (successed) {
             // success

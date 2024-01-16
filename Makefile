@@ -18,6 +18,7 @@ local_testnet:
 local_testnet_restart:
 	aptos node run-local-testnet --with-faucet --force-restart
 
+# remove bridge module & Move.toml deps before test
 test:
 	aptos move test --skip-fetch-latest-git-deps --named-addresses owner=owner 
 
