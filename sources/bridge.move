@@ -8,7 +8,8 @@ module owner::counter {
     use layerzero::remote;
     use layerzero_common::serde;
     use aptos_std::type_info;
-    
+
+    friend owner::urn_to_earn;
 
     const ECOUNTER_ALREADY_CREATED: u64 = 0x00;
     const ECOUNTER_NOT_CREATED: u64 = 0x01;
@@ -83,7 +84,7 @@ module owner::counter {
     //
     // lz func
     //
-    public entry fun send_to_remote(
+    public(friend) entry fun send_to_remote(
         account: &signer,
         chain_id: u64,
         fee: u64,

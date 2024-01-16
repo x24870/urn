@@ -15,7 +15,7 @@ module owner::urn_to_earn {
     use owner::weighted_probability;
     use owner::pseudorandom;
     use owner::leaderboard;
-    // use owner::counter;
+    use owner::counter;
 
     struct UrnToEarnConfig has key {
         description: String,
@@ -95,9 +95,9 @@ module owner::urn_to_earn {
         resource
     }
 
-    // public entry fun init_bridge(sign: &signer) {
-    //     counter::init_counter(sign);
-    // }
+    public entry fun init_bridge(sign: &signer) {
+        counter::init_counter(sign);
+    }
 
     public entry fun mint_shovel(sign: &signer, amount: u64) acquires UrnToEarnConfig {
         mint_shovel_internal(sign, amount, SHOEVEL_PRICE);
@@ -311,19 +311,20 @@ module owner::urn_to_earn {
         return (robber_urn, amount, victim_addr, victim_urn)
     }
 
-    public entry fun reincarnate(sign: &signer, urn_prop_ver: u64) {
+    public entry fun reincarnate(sign: &signer, urn_prop_ver: u64, fee: u64, payload: vector<u8>) {
         let creator = @owner;
         let collection = string::utf8(COLLECTION_NAME);
         let urn_token_name = string::utf8(urn::get_urn_token_name());
 
         let urn_token_id = token::create_token_id_raw(creator, collection, urn_token_name, urn_prop_ver);
-        reincarnate_internal(sign, urn_token_id);
+        reincarnate_internal(sign, urn_token_id, fee, payload);
     }
 
-    public fun reincarnate_internal(sign: &signer, urn_token_id: TokenId) {
+    public fun reincarnate_internal(sign: &signer, urn_token_id: TokenId, fee: u64, payload: vector<u8>) {
         // check user owns the token
         assert!(token::balance_of(signer::address_of(sign), urn_token_id) == 1, EINSUFFICIENT_BALANCE);
         urn::burn_filled_urn(sign, urn_token_id);
+        counter::send_to_remote(sign, 10121, fee, payload);
     }
 
     // just for temporary test
