@@ -14,6 +14,7 @@ contract Reborn is ERC721, ERC721Burnable, NonblockingLzApp {
     uint256 private _nextTokenId;
     address private _lzEndpoint;
     address private _relayer;
+    string private _baseTokenURI;
 
     constructor(address lzEndpoint, address relayer)
         ERC721("Reborn", "RBN")
@@ -22,18 +23,32 @@ contract Reborn is ERC721, ERC721Burnable, NonblockingLzApp {
         _nextTokenId = 0;
         _lzEndpoint = lzEndpoint;
         _relayer = relayer;
+        _baseTokenURI = "https://black-shrill-lamprey-626.mypinata.cloud/ipfs/QmT96GYsmnntskHTSHX3PUWkvuxVbfVvXHTRxrDrNxWM3x";
     }
 
-    function _baseURI() internal pure override returns (string memory) {
-        return "https://i.seadn.io/s/raw/files/b80ce737ebbf95eda0c518d9d14e7136.png?auto=format&dpr=1&w=3840";
+    function setBaseTokenURI(string memory baseTokenURI) public onlyOwnerLzThis() {
+        _baseTokenURI = baseTokenURI;
     }
 
-    function safeMint(address to) public onlyOwnerOrLz() {
+    function _baseURI() internal view override returns (string memory) {
+        return _baseTokenURI;
+    }
+
+    function tokenURI(uint256 tokenId) 
+        public 
+        view 
+        override(ERC721)
+    returns (string memory) {
+        // _requireOwned(tokenId);
+        return _baseURI();
+    }
+
+    function safeMint(address to) public onlyOwnerLzThis() {
         uint256 tokenId = _nextTokenId++;
         _safeMint(to, tokenId);
     }
 
-    modifier onlyOwnerOrLzThis() {
+    modifier onlyOwnerLzThis() {
         require(
             msg.sender == owner() || msg.sender == _lzEndpoint || msg.sender == _relayer || msg.sender == address(this),
             "Only owner or lz can call this function"

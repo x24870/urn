@@ -15,6 +15,15 @@ getCountGoerli:
 getCountOpGoerli:
 	cast call --rpc-url=${OP_GOERLI} ${OP_GOERLI_CONTRACT} "getCount()"
 
+getTokenURI:
+	cast call --rpc-url=${GOERLI} ${REBORN_GOERLI_CONTRACT} "tokenURI(uint256)(string)" 0
+
+setTokenURI:
+	cast send --rpc-url=${GOERLI} --private-key=${PRIVATE_KEY} ${REBORN_GOERLI_CONTRACT} "setBaseTokenURI(string)" "https://black-shrill-lamprey-626.mypinata.cloud/ipfs/QmTMqr2JtJmrNVZkAcNvSGYtSSbBg8vCcNmtii9LVQDPUs"
+
+safeMint:
+	cast send --rpc-url=${GOERLI} --private-key=${PRIVATE_KEY} ${REBORN_GOERLI_CONTRACT} "safeMint(address)" 0xd70BB904212d22216af18770259B6b2d1bc394c5
+
 setTrustedRemoteGoerli:
 	cast send --rpc-url=${GOERLI} --private-key=${PRIVATE_KEY} ${GOERLI_CONTRACT} \
 	"setTrustedRemote(uint16,bytes)" 10132 \

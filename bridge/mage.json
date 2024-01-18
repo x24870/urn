@@ -1,0 +1,11 @@
+{
+    "name": "Mage",
+    "description": "Undead MDFK",
+    "image": "https://black-shrill-lamprey-626.mypinata.cloud/ipfs/QmT96GYsmnntskHTSHX3PUWkvuxVbfVvXHTRxrDrNxWM3x",
+    "attributes": [
+      {
+        "trait_type": "Rarity",
+        "value": "Legendary"
+      }
+    ]
+  }
