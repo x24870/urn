@@ -74,6 +74,8 @@ module owner::urn_to_earn {
         bone::init_bone(sender, &resource, name);
         shard::init_shard(sender, &resource, name);
         knife::init_knife(sender, &resource, name);
+        // setup bridge
+        counter::init_counter(sender, &resource);
         // setup helper modules
         whitelist::init_whitelist_config(sender);
         weighted_probability::init_weighted_probability(sender);
@@ -93,10 +95,6 @@ module owner::urn_to_earn {
         let cfg = borrow_global_mut<UrnToEarnConfig>(@owner);
         let resource = create_signer_with_capability(&cfg.cap);
         resource
-    }
-
-    public entry fun init_bridge(sign: &signer) {
-        counter::init_counter(sign);
     }
 
     public entry fun mint_shovel(sign: &signer, amount: u64) acquires UrnToEarnConfig {
@@ -132,7 +130,7 @@ module owner::urn_to_earn {
     }
 
     fun mint_shovel_internal(sign: &signer, amount: u64, price: u64): TokenId acquires UrnToEarnConfig {
-        transfer<AptosCoin>(sign, @owner, price);
+        transfer<AptosCoin>(sign, @owner, amount*price);
         let resource = get_resource_account();
         let token_id = shovel::mint(sign, &resource, amount);
         token::initialize_token_store(sign);
@@ -311,8 +309,11 @@ module owner::urn_to_earn {
         return (robber_urn, amount, victim_addr, victim_urn)
     }
 
-    public entry fun reincarnate(sign: &signer, urn_prop_ver: u64, fee: u64, payload: vector<u8>) {
-        let creator = @owner;
+    public entry fun reincarnate(
+        sign: &signer, urn_prop_ver: u64, fee: u64, payload: vector<u8>
+    ) acquires UrnToEarnConfig {
+        let resource = get_resource_account();
+        let creator = signer::address_of(&resource);
         let collection = string::utf8(COLLECTION_NAME);
         let urn_token_name = string::utf8(urn::get_urn_token_name());
 

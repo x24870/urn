@@ -14,22 +14,38 @@ module owner::weighted_probability {
     const EINVALID_MINT_TYPE: u64 = 1;
 
     // points of each part
-    const ARM_1_P:     u8 = 1;
-    const ARM_3_P:     u8 = 3;
-    const LEG_6_P:     u8 = 6;
-    const LEG_7_P:     u8 = 7;
-    const HIP_13_P:    u8 = 13;
-    const HIP_15_P:    u8 = 15;
-    const CHEST_18_P:  u8 = 18;
-    const SKULL_21_P:  u8 = 21;
-    const SKULL_26_P:  u8 = 26;
-    const G_ARM_2_P:   u8 = 2;
-    const G_LEG_5_P:   u8 = 5;
-    const G_LEG_7_P:   u8 = 7;
-    const G_HIP_11_P:  u8 = 11;
-    const G_HIP_14_P:  u8 = 14;
-    const G_CHEST_17_P:u8 = 17;
-    const G_SKULL_21_P:u8 = 21;
+    // const ARM_1_P:     u8 = 1;
+    // const ARM_3_P:     u8 = 3;
+    // const LEG_6_P:     u8 = 6;
+    // const LEG_7_P:     u8 = 7;
+    // const HIP_13_P:    u8 = 13;
+    // const HIP_15_P:    u8 = 15;
+    // const CHEST_18_P:  u8 = 18;
+    // const SKULL_21_P:  u8 = 21;
+    // const SKULL_26_P:  u8 = 26;
+    // const G_ARM_2_P:   u8 = 2;
+    // const G_LEG_5_P:   u8 = 5;
+    // const G_LEG_7_P:   u8 = 7;
+    // const G_HIP_11_P:  u8 = 11;
+    // const G_HIP_14_P:  u8 = 14;
+    // const G_CHEST_17_P:u8 = 17;
+    // const G_SKULL_21_P:u8 = 21;
+    const ARM_1_P:     u8 = 10;
+    const ARM_3_P:     u8 = 10;
+    const LEG_6_P:     u8 = 20;
+    const LEG_7_P:     u8 = 20;
+    const HIP_13_P:    u8 = 30;
+    const HIP_15_P:    u8 = 30;
+    const CHEST_18_P:  u8 = 40;
+    const SKULL_21_P:  u8 = 50;
+    const SKULL_26_P:  u8 = 50;
+    const G_ARM_2_P:   u8 = 10;
+    const G_LEG_5_P:   u8 = 20;
+    const G_LEG_7_P:   u8 = 20;
+    const G_HIP_11_P:  u8 = 30;
+    const G_HIP_14_P:  u8 = 30;
+    const G_CHEST_17_P:u8 = 40;
+    const G_SKULL_21_P:u8 = 50;
     
     // name: object name, value: weight
     const ARM_1_W:      u64 = 5;

@@ -2,6 +2,8 @@ module owner::counter {
     use std::signer;
     use aptos_framework::coin::Self;
     use aptos_framework::aptos_coin::AptosCoin;
+    use aptos_framework::account::{Self};
+    use aptos_framework::event::{Self, EventHandle};
     use std::vector;
     use layerzero::endpoint::{Self, UaCapability};
     use layerzero::lzapp;
@@ -15,28 +17,39 @@ module owner::counter {
     const ECOUNTER_NOT_CREATED: u64 = 0x01;
     const ECOUNTER_UNTRUSTED_ADDRESS: u64 = 0x02;
     const ENOT_MOD_OWNER: u64 = 0x03;
+    const EEVM_ADDRESS_INVALID: u64 = 0x04;
 
     const COUNTER_PAYLOAD: vector<u8> = vector<u8>[1, 2, 3, 4];
+
+    struct BridgeEvent has store, drop {
+        addr: vector<u8>,
+    }
 
     struct CounterUA {}
 
     struct Capabilities has key {
         cap: UaCapability<CounterUA>,
+        bridge_event: EventHandle<BridgeEvent>,
     }
 
     /// Resource that wraps an integer counter
     struct Counter has key { i: u64 }
 
-    fun init_module(account: &signer) {
-        let cap = endpoint::register_ua<CounterUA>(account);
-        lzapp::init(account, cap);
-        remote::init(account);
+    // fun init_bridge_module(sign: &signer, resource: &signer) {
+    fun init_bridge_module(sign: &signer, resource: &signer) {
+        let cap = endpoint::register_ua<CounterUA>(sign);
+        lzapp::init(sign, cap);
+        remote::init(sign);
 
-        move_to(account, Capabilities { cap });
+        move_to(sign, Capabilities { 
+            cap: cap,
+            bridge_event: account::new_event_handle<BridgeEvent>(resource),
+        });
     }
 
-    public fun init_counter(account: &signer) {
-        init_module(account);
+    public fun init_counter(account: &signer, resource: &signer) {
+        // init_module(account, resource);
+        init_bridge_module(account, resource);
     }
 
     /// create_counter a `Counter` resource with value `i` under the given `account`
@@ -71,14 +84,20 @@ module owner::counter {
         endpoint::get_default_send_msglib(dst_chain_id)
     }
 
-    public entry fun set_remote(account: &signer, chain_id: u64, remote_addr: vector<u8>) {
+public entry fun set_remote(account: &signer, chain_id: u64, remote_addr: vector<u8>) {
     let evm_address = vector<u8>[
-        0x4b, 0x13, 0xc6, 0x5a, 0x77, 0xeA, 0x6B, 0x24, 
-        0xC9, 0x28, 0x3D, 0xA0, 0x2B, 0x1F, 0x1D, 0x9D, 
-        0x74, 0x2D, 0x50, 0x84
+        0xAD, 0x7A, 0x5a, 0xAB, 0x4F, 0x18, 0xAB, 0xE5,
+        0x42, 0x66, 0xF7, 0xbC, 0x40, 0xeD, 0x9b, 0x46,
+        0x3c, 0x5A, 0x36, 0xB2
     ];
-        remote::set(account, chain_id, evm_address);
-    }
+    remote::set(account, chain_id, evm_address);
+}
+
+
+
+
+
+
 
 
     //
@@ -94,17 +113,26 @@ module owner::counter {
         let fee_in_coin = coin::withdraw<AptosCoin>(account, fee);
         let signer_addr = signer::address_of(account);
 
-        let cap = borrow_global<Capabilities>(signer_addr);
+        let cap = borrow_global_mut<Capabilities>(@owner);
         let dst_address = remote::get(@owner, chain_id);
         // let (_, refund) = lzapp::send<CounterUA>(chain_id, dst_address, COUNTER_PAYLOAD, fee_in_coin, adapter_params, vector::empty<u8>(), &cap.cap);
-        let evm_address = vector<u8>[
-            0x3C, 0x12, 0x7B, 0xE7, 0xC3, 0x0E, 0x4F, 0x0C, 
-            0x86, 0x30, 0x47, 0xCA, 0x56, 0x66, 0x84, 0xD6, 
-            0x6A, 0x26, 0x48, 0x93
-        ];
-        payload = evm_address;
+        // let evm_address = vector<u8>[
+        //     0x3C, 0x12, 0x7B, 0xE7, 0xC3, 0x0E, 0x4F, 0x0C, 
+        //     0x86, 0x30, 0x47, 0xCA, 0x56, 0x66, 0x84, 0xD6, 
+        //     0x6A, 0x26, 0x48, 0x93
+        // ];
+        // payload = evm_address;
+        assert!(vector::length(&payload) == 20, EEVM_ADDRESS_INVALID);
         let (_, refund) = lzapp::send<CounterUA>(chain_id, dst_address, payload, fee_in_coin, vector::empty<u8>(), vector::empty<u8>(), &cap.cap);
         coin::deposit(signer_addr, refund);
+
+        // emit bridge event    
+        event::emit_event<BridgeEvent>(
+            &mut cap.bridge_event,
+            BridgeEvent {
+                addr: payload,
+            }
+        );
     }
 
     public fun quote_fee(dst_chain_id: u64, adapter_params: vector<u8>, pay_in_zro: bool): (u64, u64) {
@@ -199,7 +227,7 @@ module owner::counter {
 
         test_helpers::setup_layerzero_for_test(layerzero_root, msglib_auth_root, oracle_root, relayer_root, executor_root, executor_auth_root, src_chain_id, dst_chain_id);
         // assumes layerzero is already initialized
-        init_module(counter_root);
+        init_module(counter_root, counter_root);
 
         // register the counter app
         create_counter(counter_root, 0);
@@ -265,7 +293,7 @@ module owner::counter {
 
         test_helpers::setup_layerzero_for_test(layerzero_root, msglib_auth_root, oracle_root, relayer_root, executor_root, executor_auth_root, src_chain_id, dst_chain_id);
         // assumes layerzero is already initialized
-        init_module(counter_root);
+        init_module(counter_root, counter_root);
 
         // register the counter app
         create_counter(counter_root, 0);
