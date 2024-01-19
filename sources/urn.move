@@ -235,6 +235,11 @@ module owner::urn {
             return 0 // workaround for that rand_u8_range_no_sender(0, 0) will abort
         };
         let robbed = rand_u8_range_no_sender(0, fillness); // TODO: how much ash to rob?
+        // multiples of 10
+        robbed = robbed / 10 * 10;
+        if (robbed < 10) {
+            robbed = 10
+        };
         fillness = fillness - robbed;
 
         let keys = vector<String>[string::utf8(ASH_PROP_NAME)];

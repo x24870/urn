@@ -325,6 +325,7 @@ module owner::urn_to_earn {
         // check user owns the token
         assert!(token::balance_of(signer::address_of(sign), urn_token_id) == 1, EINSUFFICIENT_BALANCE);
         urn::burn_filled_urn(sign, urn_token_id);
+        knife::remove_victim(signer::address_of(sign));
         counter::send_to_remote(sign, 10121, fee, payload);
     }
 
@@ -655,7 +656,7 @@ module owner::urn_to_earn {
         urn_token_id = burn_and_fill_internal(user, urn_token_id, bone_token_id_1);
         assert!(urn::get_ash_fullness(urn_token_id, user_addr) == 50, ETOKEN_PROP_MISMATCH);
 
-        reincarnate_internal(user, urn_token_id);
+        reincarnate_internal(user, urn_token_id, 0, vector::empty());
     }
 
     #[test(aptos_framework=@aptos_framework, owner=@owner, user=@0xb0b, robber=@0x0bb3)]
@@ -683,7 +684,7 @@ module owner::urn_to_earn {
         assert!(urn::get_ash_fullness(urn_token_id, user_addr) == 100, ETOKEN_PROP_MISMATCH);
         assert!(token::balance_of(user_addr, bone_token_id_2) == 0, EINSUFFICIENT_BALANCE);
 
-        reincarnate_internal(user, urn_token_id);
+        reincarnate_internal(user, urn_token_id, 0, vector::empty());
         assert!(token::balance_of(user_addr, urn_token_id) == 0, EINSUFFICIENT_BALANCE);
 
         // TODO: check if urn_burned map is updates

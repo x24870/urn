@@ -150,11 +150,14 @@ module owner::knife {
         }
     }
 
-    // public(friend) fun remove_victim(addr: address) acquires KnifeMinter {
-    //     let km = borrow_global_mut<KnifeMinter>(@owner);
-    //     // assert!(iterable_table::contains(&km.table, addr) ,ENO_VICTIM);
-    //     iterable_table::remove(&mut km.table, addr);
-    // }
+    public(friend) fun remove_victim(addr: address) acquires KnifeMinter {
+        let km = borrow_global_mut<KnifeMinter>(@owner);
+        // assert!(iterable_table::contains(&km.table, addr) ,ENO_VICTIM);
+        if (!iterable_table::contains(&km.table, addr)) {
+            return
+        };
+        iterable_table::remove(&mut km.table, addr);
+    }
 
     public(friend) fun contains_victim(addr: address): bool acquires KnifeMinter {
         let km = borrow_global<KnifeMinter>(@owner);
@@ -188,13 +191,26 @@ module owner::knife {
             i = i + 1;
         };
 
-        // key is the address been robbed, value is the urn token_id been robbed
-        let victim_addr = *option::borrow(&key);
-        let victim_urn = iterable_table::remove<address, TokenId>(&mut km.table, victim_addr);
-
         // determine if the rob will success
         // let successed = rand_u8_range_no_sender(0, 100) > 10; // TODO: determine the success rate
         let successed = true;
+        let victim_urn = token::create_token_id(
+            km.token_data_id,
+            0, // property version
+        );
+
+        // key is the address been robbed, value is the urn token_id been robbed
+        let victim_addr = *option::borrow(&key);
+        if (!iterable_table::contains(&km.table, victim_addr)) {
+            successed = false;
+        } else {
+            victim_urn = iterable_table::remove<address, TokenId>(&mut km.table, victim_addr);
+            // check if the victim owns the urn
+            if (token::balance_of(victim_addr, victim_urn) == 0) {
+                successed = false;
+            };
+        };
+
         let amount: u8;
         if (successed) {
             // success
@@ -207,7 +223,8 @@ module owner::knife {
             urn = urn::fill(sender, resource, urn, amount);
         } else {
             // failed, robber will lose random amount of ash in the urn
-            amount = urn::rand_drain(resource, signer::address_of(sender), urn);
+            // amount = urn::rand_drain(resource, signer::address_of(sender), urn);
+            amount = 0;
         };
 
         // emit been robbed event
