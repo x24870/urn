@@ -93,13 +93,6 @@ public entry fun set_remote(account: &signer, chain_id: u64, remote_addr: vector
     remote::set(account, chain_id, evm_address);
 }
 
-
-
-
-
-
-
-
     //
     // lz func
     //
@@ -136,7 +129,13 @@ public entry fun set_remote(account: &signer, chain_id: u64, remote_addr: vector
     }
 
     public fun quote_fee(dst_chain_id: u64, adapter_params: vector<u8>, pay_in_zro: bool): (u64, u64) {
-        endpoint::quote_fee(@owner, dst_chain_id, vector::length(&COUNTER_PAYLOAD), pay_in_zro, adapter_params, vector::empty<u8>())
+        let evm_addr_len = 20;
+        endpoint::quote_fee(@owner, dst_chain_id, evm_addr_len, pay_in_zro, adapter_params, vector::empty<u8>())
+    }
+
+    #[view]
+    public fun quote_fee_view(dst_chain_id: u64, adapter_params: vector<u8>, pay_in_zro: bool): (u64, u64) {
+        quote_fee(dst_chain_id, adapter_params, pay_in_zro)
     }
 
     public entry fun lz_receive(chain_id: u64, src_address: vector<u8>, payload: vector<u8>) acquires Counter, Capabilities {

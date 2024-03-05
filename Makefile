@@ -40,11 +40,11 @@ compile_testnet:
 	aptos move compile --named-addresses owner=testnet
 
 publish:
-	mv sources/bridge.move sources/bridge.move2
+	# mv sources/bridge.move sources/bridge.move2
 	aptos move publish --named-addresses owner=${profile} \
 	--bytecode-version=6 --included-artifacts=none \
 	--sender-account ${profile} --profile ${profile}
-	mv sources/bridge.move2 sources/bridge.move
+	# mv sources/bridge.move2 sources/bridge.move
 
 publish_testnet:
 	aptos move publish --assume-yes --sender-account testnet --profile testnet \
@@ -174,6 +174,19 @@ view_is_whitelisted_and_minted_testnet:
 		"type_arguments": [], \
 		"arguments": ["Blocto", "0x14bb3a81a6a92db55f4ef6f4f1abef445c418a33d5ddfd4bd672346c9db38add"] \
 	}'
+
+view_quote_fee:
+	aptos move view --profile=${profile} --function-id ${profile}::counter::quote_fee_view --args u64:10121 string:'' bool:false
+
+view_get_default_send_msglib:
+	aptos move view --profile=${profile} --function-id ${profile}::counter::get_default_send_msglib --args u64:10121
+
+set_seed:
+	aptos move run --function-id ${profile}::urn_to_earn::set_seed \
+	--sender-account=${profile} --profile=${profile} \
+
+view_seed:
+	aptos move view --profile=${profile} --function-id ${profile}::urn_to_earn::view_seed
 
 sum:
 	curl --request POST \

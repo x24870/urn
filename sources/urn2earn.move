@@ -2,6 +2,7 @@ module owner::urn_to_earn {
     use aptos_framework::account::{Self, create_signer_with_capability};
     use aptos_framework::coin::{Self, transfer};
     use aptos_framework::aptos_coin::{Self, AptosCoin};
+    use aptos_framework::randomness;
     use std::signer;
     use std::vector;
     use std::string::{Self, String};
@@ -15,7 +16,7 @@ module owner::urn_to_earn {
     use owner::weighted_probability;
     use owner::pseudorandom;
     use owner::leaderboard;
-    use owner::counter;
+    // use owner::counter;
 
     struct UrnToEarnConfig has key {
         description: String,
@@ -24,6 +25,7 @@ module owner::urn_to_earn {
         maximum: u64,
         mutate_config: vector<bool>,
         cap: account::SignerCapability,
+        seed: u64,
     }
 
     const ENOT_AUTHORIZED:               u64 = 1;
@@ -75,7 +77,7 @@ module owner::urn_to_earn {
         shard::init_shard(sender, &resource, name);
         knife::init_knife(sender, &resource, name);
         // setup bridge
-        counter::init_counter(sender, &resource);
+        // counter::init_counter(sender, &resource);
         // setup helper modules
         whitelist::init_whitelist_config(sender);
         weighted_probability::init_weighted_probability(sender);
@@ -88,6 +90,7 @@ module owner::urn_to_earn {
             maximum: maximum,
             mutate_config: mutate_setting,
             cap: signer_cap,
+            seed: 0,
         });
     }
 
@@ -326,7 +329,7 @@ module owner::urn_to_earn {
         assert!(token::balance_of(signer::address_of(sign), urn_token_id) == 1, EINSUFFICIENT_BALANCE);
         urn::burn_filled_urn(sign, urn_token_id);
         knife::remove_victim(signer::address_of(sign));
-        counter::send_to_remote(sign, 10121, fee, payload);
+        // counter::send_to_remote(sign, 10121, fee, payload);
     }
 
     // just for temporary test
@@ -336,6 +339,25 @@ module owner::urn_to_earn {
             pseudorandom::rand_u128_range(&signer::address_of(sign), 0, 10000000000000);
             i = i + 1;
         };
+    }
+
+    // TODO remove this function
+    entry fun set_seed(sign: &signer) acquires UrnToEarnConfig {
+        // assert!(signer::address_of(sign) == @owner, ENOT_AUTHORIZED);
+        // let cfg = borrow_global_mut<UrnToEarnConfig>(@owner);
+        // cfg.seed = randomness::u64_integer();
+        set_seed_internal();
+    }
+
+    fun set_seed_internal() acquires UrnToEarnConfig {
+        let cfg = borrow_global_mut<UrnToEarnConfig>(@owner);
+        cfg.seed = randomness::u64_integer();
+    }
+
+    #[view]
+    public fun view_seed():u64 acquires UrnToEarnConfig {
+        let cfg = borrow_global<UrnToEarnConfig>(@owner);
+        cfg.seed
     }
 
     #[test_only]
