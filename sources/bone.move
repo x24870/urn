@@ -4,8 +4,8 @@ module owner::bone {
     use std::string::{Self, String};
     use aptos_token::token::{Self, TokenId};
     use aptos_framework::event::{Self, EventHandle};
+    use aptos_framework::randomness;
     use std::bcs;
-    use owner::pseudorandom::{rand_u8_range};
     use aptos_token::property_map::{Self};
 
     const MAX_U64: u64 = 18446744073709551615;
@@ -335,7 +335,7 @@ module owner::bone {
         );
 
         // rand point
-        let point = rand_u8_range(&signer_addr, 0, 100);
+        let point = randomness::u8_range(0, 100);
         let keys = vector<String>[string::utf8(POINT_PROP_NAME)];
         let vals = vector<vector<u8>>[bcs::to_bytes<u8>(&point)];
         let types = vector<String>[string::utf8(b"u8")];
@@ -373,7 +373,7 @@ module owner::bone {
         );
 
         // rand point
-        let point = rand_u8_range(&signer_addr, 0, 100);
+        let point = randomness::u8_range(0, 100);
         let keys = vector<String>[
             string::utf8(POINT_PROP_NAME), 
             ];
@@ -398,7 +398,7 @@ module owner::bone {
 
     #[test_only]
     fun rand_bone(addr: &address, bm: &mut BoneMinter): token::TokenDataId {
-        let r = rand_u8_range(addr, 0, 100);
+        let r = randomness::u8_range(0, 100);
         if (r < 20) {
             return bm.arm_token_data_id
         } else if (r < 40) {
@@ -414,7 +414,7 @@ module owner::bone {
 
     #[test_only]
     fun rand_golden_bone(addr: &address, bm: &mut BoneMinter): token::TokenDataId {
-        let r = rand_u8_range(addr, 0, 100);
+        let r = randomness::u8_range(0, 100);
         if (r < 20) {
             return bm.golden_arm_token_data_id
         } else if (r < 40) {

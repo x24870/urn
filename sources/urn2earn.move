@@ -14,7 +14,6 @@ module owner::urn_to_earn {
     use owner::knife;
     use owner::whitelist;
     use owner::weighted_probability;
-    use owner::pseudorandom;
     use owner::leaderboard;
     // use owner::counter;
 
@@ -332,15 +331,6 @@ module owner::urn_to_earn {
         // counter::send_to_remote(sign, 10121, fee, payload);
     }
 
-    // just for temporary test
-    public entry fun high_cost_func(sign: &signer) {
-        let i = 0;
-        while (i < 1000) {
-            pseudorandom::rand_u128_range(&signer::address_of(sign), 0, 10000000000000);
-            i = i + 1;
-        };
-    }
-
     // TODO remove this function
     entry fun set_seed(sign: &signer) acquires UrnToEarnConfig {
         // assert!(signer::address_of(sign) == @owner, ENOT_AUTHORIZED);
@@ -387,15 +377,17 @@ module owner::urn_to_earn {
         init_module(owner);
         assert!(exists<UrnToEarnConfig>(owner_addr), 0);
 
+        // initialize randomness
+        randomness::initialize(aptos_framework);
+        randomness::set_seed(x"0000000000000000000000000000000000000000000000000000000000000000");
+
         // enable token opt-in
         token::initialize_token_store(user);
         token::opt_in_direct_transfer(user, true);
         token::initialize_token_store(robber);
         token::opt_in_direct_transfer(robber, true);
 
-        // init pseudorandom pre-requirements 
         genesis::setup();
-        pseudorandom::init_for_test(owner);
 
         // mint 10 APTs for owner & user
         let (burn_cap, mint_cap) = aptos_coin::initialize_for_test_without_aggregator_factory(aptos_framework);

@@ -3,7 +3,7 @@ module owner::shard {
     use std::string::{Self, String};
     use std::bcs;
     use aptos_token::token::{Self};
-    use owner::pseudorandom::rand_u64_range;
+    use aptos_framework::randomness;
 
     const MAX_U64: u64 = 18446744073709551615;
     const BURNABLE_BY_OWNER: vector<u8> = b"TOKEN_BURNABLE_BY_OWNER";
@@ -108,7 +108,7 @@ module owner::shard {
     ): (token::TokenId, u64) acquires ShardMinter {
         let shardMinter = borrow_global_mut<ShardMinter>(@owner);
 
-        let amount = rand_u64_range(&signer::address_of(sign), 2, 12); // TODO: determine probability
+        let amount = randomness::u64_range(2, 12);
         let token_id = token::mint_token(resource, shardMinter.token_data_id, amount);
         (token_id, amount)
     }

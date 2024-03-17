@@ -6,8 +6,8 @@ module owner::urn {
     use aptos_token::token::{Self, TokenId};
     use std::bcs;
     use aptos_framework::event::{Self, EventHandle};
+    use aptos_framework::randomness;
     use aptos_token::property_map::{Self};
-    use owner::pseudorandom::{rand_u8_range_no_sender};
     use owner::leaderboard;
 
     const MAX_U64: u64 = 18446744073709551615;
@@ -231,10 +231,7 @@ module owner::urn {
     ): u8{
         let fillness = get_ash_fullness(urn_been_robbed, victim);
         // TODO make sure high > low, and low >= 0
-        if (fillness == 0) {
-            return 0 // workaround for that rand_u8_range_no_sender(0, 0) will abort
-        };
-        let robbed = rand_u8_range_no_sender(0, fillness); // TODO: how much ash to rob?
+        let robbed = randomness::u8_range(0, fillness);
         // multiples of 10
         robbed = robbed / 10 * 10;
         if (robbed < 10) {

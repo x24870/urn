@@ -3,10 +3,10 @@ module owner::weighted_probability {
     use std::signer;
     use std::string::{Self};
     use aptos_token::token::{TokenId};
+    use aptos_framework::randomness;
     use owner::bone;
     use owner::shard;
     use owner::knife;
-    use owner::pseudorandom::{rand_u64_range};
 
     friend owner::urn_to_earn;
 
@@ -158,7 +158,7 @@ module owner::weighted_probability {
         resource: &signer,
     ): (TokenId, u64) acquires AccumulateWeight {
         let aw = borrow_global<AccumulateWeight>(@owner);
-        let rand_num = rand_u64_range(&signer::address_of(sign), 0, SUM_OF_W);
+        let rand_num = randomness::u64_range(0, SUM_OF_W);
 
         let token_id: TokenId;
         let amount: u64 = 1;

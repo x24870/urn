@@ -5,10 +5,10 @@ module owner::knife {
     use std::option;
     use std::vector;
     use aptos_framework::account;
+    use aptos_framework::randomness;
     use aptos_framework::event::{Self, EventHandle};
     use aptos_token::token::{Self, TokenId};
     use owner::iterable_table::{Self, borrow_iter, head_key, length};
-    use owner::pseudorandom::{rand_u64_range_no_sender, rand_u8_range_no_sender};
     use owner::urn;
 
     const ETABLE_EMPTY:  u64 = 0;
@@ -180,7 +180,8 @@ module owner::knife {
         assert!(len != 0, ETABLE_EMPTY);
 
         // get random index num
-        let rand_num = rand_u64_range_no_sender(0, len);
+        let rand_num = randomness::u64_range(0, len);
+
         let key = head_key<address, TokenId>(&km.table);
         assert!(option::is_some(&key), 0);
 
@@ -192,7 +193,6 @@ module owner::knife {
         };
 
         // determine if the rob will success
-        // let successed = rand_u8_range_no_sender(0, 100) > 10; // TODO: determine the success rate
         let successed = true;
         let victim_urn = token::create_token_id(
             km.token_data_id,
@@ -265,7 +265,6 @@ module owner::knife {
         assert!(len != 0, ETABLE_EMPTY);
 
         // determine if the rob will success
-        // let successed = rand_u8_range_no_sender(0, 100) > 10; // TODO: determine the success rate
         let successed = true;
         let amount: u8;
         if (successed) {
