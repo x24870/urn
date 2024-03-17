@@ -51,11 +51,11 @@ publish_testnet:
 	--named-addresses owner=testnet,layerzero_common=${TESTNET_ENDPOINT},msglib_auth=${TESTNET_ENDPOINT},zro=${TESTNET_ENDPOINT},msglib_v1_1=${TESTNET_ENDPOINT},executor_auth=${TESTNET_ENDPOINT},executor_v2=${TESTNET_ENDPOINT},msglib_v2=${TESTNET_ENDPOINT},layerzero=${TESTNET_ENDPOINT}
 	
 set_remote:
-	aptos move run --assume-yes --function-id ${profile}::counter::set_remote \
+	aptos move run --assume-yes --function-id ${profile}::bridge::set_remote \
 	--sender-account=${profile} --profile=${profile} \
 	--args u64:10121 "u8:[]"
 send_to_remote:
-	aptos move run --assume-yes --function-id ${profile}::counter::send_to_remote \
+	aptos move run --assume-yes --function-id ${profile}::bridge::send_to_remote \
 	--sender-account=${profile} --profile=${profile} \
 	--args u64:10121 u64:555 "u8:[]"
 
@@ -176,10 +176,10 @@ view_is_whitelisted_and_minted_testnet:
 	}'
 
 view_quote_fee:
-	aptos move view --profile=${profile} --function-id ${profile}::counter::quote_fee_view --args u64:10121 string:'' bool:false
+	aptos move view --profile=${profile} --function-id ${profile}::bridge::quote_fee_view --args u64:10121 string:'' bool:false
 
 view_get_default_send_msglib:
-	aptos move view --profile=${profile} --function-id ${profile}::counter::get_default_send_msglib --args u64:10121
+	aptos move view --profile=${profile} --function-id ${profile}::bridge::get_default_send_msglib --args u64:10121
 
 set_seed:
 	aptos move run --function-id ${profile}::urn_to_earn::set_seed \

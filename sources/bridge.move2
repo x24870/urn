@@ -1,4 +1,4 @@
-module owner::counter {
+module owner::bridge {
     use std::signer;
     use aptos_framework::coin::Self;
     use aptos_framework::aptos_coin::AptosCoin;

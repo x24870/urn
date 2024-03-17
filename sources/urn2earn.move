@@ -15,7 +15,7 @@ module owner::urn_to_earn {
     use owner::whitelist;
     use owner::weighted_probability;
     use owner::leaderboard;
-    // use owner::counter;
+    // use owner::bridge;
 
     struct UrnToEarnConfig has key {
         description: String,
